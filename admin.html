@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex, nofollow"/>
+<title>Studio Dashboard — Lush &amp; Luxe</title>
+<link rel="icon" href="favicon.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#F5F0E7; --card:#FFFDF9; --ink:#2E2823; --ink2:#5C534B; --muted:#8E8378;
+  --line:rgba(101,90,80,.18); --pink:#D9CEBE; --pink-lt:#ECE4D7; --rose:#655A50; --rose-ink:#4B423A;
+  --bar:#8A7D70; --bar-hi:#4B423A; --grid:rgba(101,90,80,.10);
+  --good:#2f7a4f; --good-bg:#e6f3ea; --warn:#9a6a12; --warn-bg:#fbf1dc; --bad:#a63d3d; --bad-bg:#f8e3e3; --info-bg:#ECE4D7; --info:#4B423A;
+  --cinzel:'Outfit',system-ui,sans-serif; --corm:'Outfit',system-ui,sans-serif; --body:'Outfit',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#2A2521; --card:#342E29; --ink:#F5F0E7; --ink2:#D9CEBE; --muted:#A39888;
+  --line:rgba(245,240,231,.14); --pink-lt:#3E3731; --rose:#D9CEBE; --rose-ink:#F5F0E7;
+  --bar:#BFB2A2; --bar-hi:#F5F0E7; --grid:rgba(245,240,231,.10);
+  --good:#7fcf9c; --good-bg:#16291e; --warn:#e6bd6a; --warn-bg:#2c2312; --bad:#f09a9a; --bad-bg:#331a1a; --info-bg:#3E3731; --info:#E9E1D4;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+
+/* Login */
+#login{min-height:100vh;display:grid;place-items:center;padding:24px 16px}
+.login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:36px 28px;text-align:center}
+.brand{font-family:var(--cinzel);letter-spacing:5px;font-size:.95rem;color:var(--rose-ink);text-transform:uppercase}
+.brand-sub{font-family:var(--corm);font-style:italic;font-size:1.25rem;color:var(--ink2);margin:4px 0 24px}
+.field{text-align:left;margin-bottom:14px}
+.field label{display:block;font-family:var(--cinzel);font-size:.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.inp{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--bg);outline:none}
+.inp:focus{border-color:var(--rose)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:999px;border:1px solid transparent;background:var(--rose);color:var(--bg);font-weight:500;font-size:.88rem;white-space:nowrap}
+.btn:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent;color:var(--ink2);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--rose);color:var(--rose-ink)}
+.btn.sm{padding:6px 12px;font-size:.8rem}
+.btn.wide{width:100%;padding:12px}
+.link{background:none;border:0;color:var(--rose-ink);text-decoration:underline;font-size:.82rem}
+.msg{font-size:.84rem;margin-top:12px;color:var(--bad);min-height:1.2em}
+.msg.ok{color:var(--good)}
+
+/* App shell */
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top-in{max-width:1200px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top-in .brand{font-size:.8rem;letter-spacing:4px}
+.top-in .who{font-size:.78rem;color:var(--muted);margin-left:auto}
+nav.tabs{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+nav.tabs button{background:none;border:0;padding:10px 14px;font-family:var(--cinzel);font-size:.68rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs button.on{color:var(--rose-ink);border-bottom-color:var(--rose)}
+nav.tabs .badge{display:inline-block;min-width:18px;padding:0 5px;border-radius:9px;background:var(--rose);color:#fff;font-family:var(--body);font-size:.66rem;letter-spacing:0;margin-left:4px;line-height:18px}
+main{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
+.demo-bar{background:var(--info-bg);color:var(--info);border-radius:12px;padding:10px 14px;font-size:.84rem;margin-bottom:16px;display:flex;gap:10px;align-items:baseline}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:7px 13px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:.8rem;color:var(--ink2)}
+.chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.toolbar .sp{flex:1}
+h2.sec{font-family:var(--corm);font-weight:300;font-size:1.6rem;margin:28px 0 12px}
+h3.card-t{font-family:var(--cinzel);font-size:.66rem;letter-spacing:3px;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.kpi .lbl{font-size:.74rem;color:var(--muted);letter-spacing:.3px}
+.kpi .val{font-family:var(--corm);font-size:2rem;font-weight:300;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+.kpi .delta{font-size:.76rem;margin-top:2px;color:var(--muted)}
+.delta .up{color:var(--good)} .delta .down{color:var(--bad)}
+.two{grid-template-columns:1fr 1fr} .wide-left{grid-template-columns:1.6fr 1fr}
+@media (max-width:860px){.two,.wide-left{grid-template-columns:1fr}}
+.nudge{display:flex;gap:12px;align-items:center;background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:12px 14px;font-size:.86rem;margin-bottom:14px;flex-wrap:wrap}
+.nudge b{font-weight:600}
+.insights{list-style:none;display:grid;gap:10px}
+.insights li{display:flex;gap:10px;font-size:.88rem;color:var(--ink2);line-height:1.5}
+.insights li::before{content:'✦';color:var(--rose);flex:none}
+
+/* Charts */
+.chart{position:relative;width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+.chart .gl{stroke:var(--grid);stroke-width:1}
+.chart .bar{fill:var(--bar);transition:fill .12s}
+.chart .hit:hover + .bar,.chart .bar.hl{fill:var(--bar-hi)}
+.chart .hit{fill:transparent}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.78rem;padding:7px 10px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-8px;opacity:0;transition:opacity .1s;z-index:5}
+.tip b{font-weight:600}
+.hbars{display:grid;gap:9px}
+.hb{display:grid;grid-template-columns:minmax(110px,150px) 1fr auto;gap:10px;align-items:center;font-size:.84rem}
+.hb .nm{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .tr{height:12px;background:var(--pink-lt);border-radius:6px;overflow:hidden}
+.hb .fl{height:100%;background:var(--bar);border-radius:6px}
+.hb .v{color:var(--ink2);font-size:.8rem;text-align:right;min-width:92px}
+.empty{color:var(--muted);font-size:.88rem;padding:18px 0;text-align:center}
+
+/* Lists */
+.list{display:grid;gap:10px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:110px 1fr auto;gap:12px;align-items:center}
+@media (max-width:640px){.row{grid-template-columns:1fr}}
+.row .when{font-size:.8rem;color:var(--muted)}
+.row .when b{display:block;color:var(--ink);font-size:.95rem;font-weight:500}
+.row .nm{font-weight:500}
+.row .sub{font-size:.82rem;color:var(--ink2)}
+.row .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.st{font-size:.72rem;font-weight:600;padding:3px 9px;border-radius:999px;letter-spacing:.3px}
+.st.booked{background:var(--info-bg);color:var(--info)} .st.completed{background:var(--good-bg);color:var(--good)}
+.st.no_show{background:var(--bad-bg);color:var(--bad)} .st.cancelled{background:var(--pink-lt);color:var(--muted)}
+.st.rescheduled{background:var(--pink-lt);color:var(--muted)} .st.held{background:var(--warn-bg);color:var(--warn)}
+.sel{padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:.82rem}
+.amt{width:92px;padding:7px 9px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:.82rem}
+.search{flex:1;min-width:180px;max-width:340px}
+table.tbl{width:100%;border-collapse:collapse;font-size:.86rem}
+.tbl th{text-align:left;font-family:var(--cinzel);font-weight:500;font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:10px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+.tbl td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr.cl:hover td{background:var(--pink-lt);cursor:pointer}
+.tbl .r{text-align:right}
+.tbl-wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px}
+.hist{background:var(--pink-lt);font-size:.82rem;color:var(--ink2)}
+.hist div{padding:3px 0}
+.tag{display:inline-block;font-size:.68rem;padding:2px 7px;border-radius:999px;background:var(--pink-lt);color:var(--rose-ink);margin-left:6px;font-weight:600;vertical-align:1px}
+.fill-group{margin-bottom:26px}
+.fill-group h3{font-family:var(--corm);font-size:1.35rem;font-weight:500;margin-bottom:4px}
+.fill-group p.hint{font-size:.84rem;color:var(--muted);margin-bottom:12px}
+.wa{background:#1f8f4e;color:#fff;border:0}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(20,10,12,.45);display:grid;place-items:center;padding:16px;z-index:50}
+.modal .card{width:100%;max-width:440px;max-height:90vh;overflow:auto}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.84rem;opacity:0;transition:.25s;z-index:60;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ═════════ LOGIN ═════════ -->
+<section id="login" class="hidden">
+  <div class="login-card">
+    <img src="logo-lockup-taupe.png" alt="Lush &amp; Luxe" style="height:110px;margin:0 auto 6px"/>
+    <div class="brand-sub">Studio dashboard</div>
+    <div id="loginForm">
+      <div class="field"><label>Email</label><input class="inp" id="lEmail" type="email" autocomplete="username"/></div>
+      <div class="field"><label>Password</label><input class="inp" id="lPass" type="password" autocomplete="current-password"/></div>
+      <button class="btn wide" id="lBtn">Sign in</button>
+      <div style="margin-top:12px"><button class="link" id="forgotBtn">Forgot password?</button></div>
+    </div>
+    <div id="newPassForm" class="hidden">
+      <div class="field"><label>New password</label><input class="inp" id="nPass" type="password" autocomplete="new-password"/></div>
+      <button class="btn wide" id="nBtn">Save new password</button>
+    </div>
+    <div class="msg" id="lMsg"></div>
+    <div id="notConfigured" class="hidden" style="margin-top:18px;font-size:.84rem;color:var(--ink2)">
+      The database isn't connected yet, so there's nothing to sign in to.<br/>
+      <button class="btn ghost sm" style="margin-top:12px" id="demoBtn">Preview with demo data</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ APP ═════════ -->
+<section id="app" class="hidden">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand" style="display:flex;align-items:center;gap:8px;letter-spacing:.02em;text-transform:none;font-size:1.05rem;font-weight:300"><img src="logo-mark-taupe.png" alt="" style="height:32px"/>lush &amp; luxe</div>
+      <div class="who" id="who"></div>
+      <button class="btn ghost sm" id="refreshBtn" title="Reload data">↻ Refresh</button>
+      <button class="btn ghost sm" id="outBtn">Sign out</button>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="overview" class="on">Overview</button>
+      <button data-tab="appts">Appointments <span class="badge hidden" id="apptBadge"></span></button>
+      <button data-tab="clients">Clients</button>
+      <button data-tab="fills">Fill-ins <span class="badge hidden" id="fillBadge"></span></button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="demo-bar hidden" id="demoBar">✦ <span><b>Demo data</b> — invented clients so you can see how the dashboard works. Real bookings appear here once the database is connected.</span></div>
+
+    <!-- OVERVIEW -->
+    <div id="tab-overview">
+      <div class="toolbar">
+        <div class="chips" id="periodChips">
+          <button class="chip" data-p="week">This week</button>
+          <button class="chip on" data-p="month">This month</button>
+          <button class="chip" data-p="lastmonth">Last month</button>
+          <button class="chip" data-p="year">This year</button>
+          <button class="chip" data-p="lastyear">Last year</button>
+          <button class="chip" data-p="all">All time</button>
+        </div>
+      </div>
+      <div class="nudge hidden" id="importBar" style="background:var(--info-bg);color:var(--info)"></div>
+      <div class="nudge hidden" id="nudge"></div>
+      <div class="grid kpis" id="kpis"></div>
+
+      <div class="grid wide-left" style="margin-top:14px">
+        <div class="card">
+          <h3 class="card-t">Revenue by month · last 12 months</h3>
+          <div class="chart" id="revChart"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-t">What we've noticed</h3>
+          <ul class="insights" id="insights"></ul>
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:14px">
+        <div class="card">
+          <h3 class="card-t" id="svcTitle">Most booked services</h3>
+          <div class="hbars" id="svcBars"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-t">Busiest days</h3>
+          <div class="chart" id="dayChart"></div>
+          <h3 class="card-t" style="margin-top:18px">Most popular times</h3>
+          <div class="hbars" id="timeBars"></div>
+        </div>
+      </div>
+
+      <div class="grid two" style="margin-top:14px">
+        <div class="card">
+          <h3 class="card-t">New vs returning visits</h3>
+          <div class="hbars" id="nvrBars"></div>
+        </div>
+        <div class="card">
+          <h3 class="card-t">Add-ons</h3>
+          <div class="hbars" id="addonBars"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h3 class="card-t" id="techTitle">By lash tech</h3>
+        <div class="tbl-wrap" style="border:0"><table class="tbl" id="techTable"></table></div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENTS -->
+    <div id="tab-appts" class="hidden">
+      <div class="toolbar">
+        <div class="chips" id="apptChips">
+          <button class="chip on" data-f="upcoming">Upcoming</button>
+          <button class="chip" data-f="tomark">Needs updating</button>
+          <button class="chip" data-f="held">Deposit held</button>
+          <button class="chip" data-f="past">Past</button>
+          <button class="chip" data-f="all">All</button>
+        </div>
+        <div class="sp"></div>
+        <select class="sel" id="techFilter" onchange="renderAppts()"></select>
+        <button class="btn sm" id="addBtn">+ Add booking</button>
+      </div>
+      <p style="font-size:.84rem;color:var(--muted);margin:-6px 0 14px" id="apptHint"></p>
+      <div class="list" id="apptList"></div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div id="tab-clients" class="hidden">
+      <div class="toolbar">
+        <input class="inp search" id="cSearch" placeholder="Search name or phone…"/>
+        <div class="sp"></div>
+        <button class="btn ghost sm" id="vipBtn">⬇ VIP list <span id="vipCount"></span></button>
+        <button class="btn ghost sm" id="csvBtn">⬇ Export all bookings (CSV)</button>
+      </div>
+      <div class="grid kpis" id="clientKpis" style="margin-bottom:14px"></div>
+      <div class="tbl-wrap"><table class="tbl" id="cTable"></table></div>
+    </div>
+
+    <!-- FILL-INS -->
+    <div id="tab-fills" class="hidden">
+      <div id="fillWrap"></div>
+    </div>
+  </main>
+</section>
+
+<!-- Add booking modal -->
+<div class="modal hidden" id="addModal">
+  <div class="card">
+    <h3 class="card-t">Add a booking (WhatsApp, walk-in, phone)</h3>
+    <div class="field"><label>Client name *</label><input class="inp" id="aName"/></div>
+    <div class="field"><label>Phone *</label><input class="inp" id="aPhone" placeholder="+233…"/></div>
+    <div class="field"><label>Service *</label><select class="inp" id="aSvc"></select></div>
+    <div class="f2">
+      <div class="field"><label>Date *</label><input class="inp" type="date" id="aDate"/></div>
+      <div class="field"><label>Time *</label><input class="inp" id="aTime" placeholder="2:30 PM"/></div>
+    </div>
+    <div class="f2">
+      <div class="field"><label>Price (₵)</label><input class="inp" type="number" id="aPrice"/></div>
+      <div class="field"><label>Status</label><select class="inp" id="aStatus"><option value="booked">Booked</option><option value="completed">Completed</option></select></div>
+    </div>
+    <div class="field"><label>Lash tech *</label><select class="inp" id="aTech"></select></div>
+    <div class="field"><label>Source</label><select class="inp" id="aSource"><option value="whatsapp">WhatsApp</option><option value="walk-in">Walk-in</option><option value="instagram">Instagram DM</option><option value="phone">Phone call</option></select></div>
+    <div class="field"><label>Notes</label><input class="inp" id="aNotes"/></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="btn ghost" id="aCancel">Cancel</button><button class="btn" id="aSave">Save booking</button>
+    </div>
+  </div>
+</div>
+<div class="modal hidden" id="reschedModal">
+  <div class="card">
+    <h3 class="card-t">Reschedule appointment</h3>
+    <p id="rInfo" style="font-size:.88rem;color:var(--ink2);margin-bottom:14px;line-height:1.6"></p>
+    <div class="f2">
+      <div class="field" style="grid-column:1/-1"><label>Lash tech</label><select class="inp" id="rTech" onchange="reschedSlots()"></select></div>
+      <div class="field"><label>New date *</label><input class="inp" type="date" id="rDate" onchange="reschedSlots()"/></div>
+      <div class="field"><label>New time *</label><select class="inp" id="rTime"></select></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="btn ghost" onclick="$('reschedModal').classList.add('hidden')">Cancel</button><button class="btn" id="rSave" onclick="saveResched()">Save new date</button>
+    </div>
+  </div>
+</div>
+<div class="modal hidden" id="rDone">
+  <div class="card" style="text-align:center">
+    <h3 class="card-t">Rescheduled ✓</h3>
+    <p style="font-size:.9rem;color:var(--ink2);margin-bottom:16px">Let the client know their new time:</p>
+    <a class="btn wa" id="rWa" target="_blank" href="#">Send on WhatsApp</a>
+    <div style="margin-top:12px"><button class="link" onclick="$('rDone').classList.add('hidden')">Close</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ═════════════════════════════════════════════
+//  CONFIG — use the SAME two values as on the website
+// ═════════════════════════════════════════════
+const CFG = {
+  supabaseUrl:     'https://gdrqtivlonlrkjebhywz.supabase.co',
+  supabaseAnonKey: 'sb_publishable_IBmlu2KpT5U2JhJTTGKzUw_1Y1Wc_Gt',
+  studioUrl:       'lushnluxestudio.com',
+  lashTechs:       ['Tech 1'],   // ← same names as on the website
+  fillDueFrom: 14, fillDueTo: 21,     // days after last set → "due for a fill-in"
+};
+
+const SERVICES = [
+  ['Classic Cat Eye / Wispy',250],['Hybrid Cat Eye',300],['Wispy',300],['Volume Cat Eye',350],['Volume Wispy',400],
+  ['Wet Set',280],['Elle Set',300],['Anime Set',320],['Doll Eye Set',280],['Custom Set',400],
+  ['Refill',0],['Lash Removal',100],['Bottoms',100],
+  ['Brow Shaping',30],['Brow Tint',150],['Brow Lamination',220],['Brow Lamination & Tint',350]
+];
+const NON_SET = ['Lash Removal','Bottoms'];        // don't start the fill-in clock
+const isSetVisit = b => !NON_SET.includes(b.service) && !/^Brow/i.test(b.service||'');
+
+// ── helpers ──
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cedi = n => '₵' + Math.round(n||0).toLocaleString('en-GH');
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseD = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const TODAY = ymd(new Date());
+const daysBetween = (a,b) => Math.round((parseD(b)-parseD(a))/86400000);
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fmtDate = s => { const d=parseD(s); return DAYS[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()]; };
+const fmtDateY = s => { const d=parseD(s); return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear(); };
+const normPhone = p => { let d=String(p||'').replace(/\D/g,''); if(d.startsWith('0')) d='233'+d.slice(1); if(d.length===9) d='233'+d; return d; };
+const value = b => b.amount_paid!=null ? Number(b.amount_paid) : Number(b.total||0);
+const toMins = s => { const m=/(\d+):(\d+)\s*(AM|PM)/i.exec(s||''); if(!m) return 0; let h=+m[1]%12; if(/pm/i.test(m[3])) h+=12; return h*60+ +m[2]; };
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('show'),2600); }
+
+// ── state ──
+let sb = null, DEMO = false, ALL = [], period = 'month', apptFilter = 'upcoming', sortKey='last', sortDir=-1, openClient=null;
+const SB_ON = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && window.supabase);
+
+// ═════════ AUTH ═════════
+async function boot(){
+  if(!SB_ON){ showLogin(); $('loginForm').classList.add('hidden'); $('notConfigured').classList.remove('hidden'); return; }
+  sb = supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+  sb.auth.onAuthStateChange((ev, session)=>{
+    if(ev==='PASSWORD_RECOVERY'){ showLogin(); $('loginForm').classList.add('hidden'); $('newPassForm').classList.remove('hidden'); }
+  });
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session && !location.hash.includes('type=recovery')) startApp(session.user.email); else showLogin();
+}
+function showLogin(){ $('login').classList.remove('hidden'); $('app').classList.add('hidden'); }
+$('lBtn').onclick = async ()=>{
+  $('lMsg').className='msg'; $('lMsg').textContent='';
+  const { data, error } = await sb.auth.signInWithPassword({ email:$('lEmail').value.trim(), password:$('lPass').value });
+  if(error){ $('lMsg').textContent = error.message; return; }
+  startApp(data.user.email);
+};
+$('lPass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('lBtn').click(); });
+$('forgotBtn').onclick = async ()=>{
+  const email=$('lEmail').value.trim(); if(!email){ $('lMsg').textContent='Type your email first, then tap "Forgot password".'; return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email,{ redirectTo: location.origin+location.pathname });
+  $('lMsg').className = error?'msg':'msg ok'; $('lMsg').textContent = error?error.message:'Check your email for a reset link.';
+};
+$('nBtn').onclick = async ()=>{
+  const { error } = await sb.auth.updateUser({ password:$('nPass').value });
+  if(error){ $('lMsg').textContent=error.message; return; }
+  history.replaceState(null,'',location.pathname);
+  const { data:{ session } } = await sb.auth.getSession(); startApp(session.user.email);
+};
+$('outBtn').onclick = async ()=>{ if(DEMO){ location.reload(); return; } await sb.auth.signOut(); location.reload(); };
+$('demoBtn').onclick = ()=>{ DEMO=true; ALL=makeDemo(); $('demoBar').classList.remove('hidden'); enterApp('Demo mode'); };
+$('refreshBtn').onclick = ()=> DEMO ? toast('Demo data') : loadData().then(()=>toast('Up to date'));
+
+async function startApp(email){ enterApp(email); await loadData(); }
+function enterApp(label){ $('login').classList.add('hidden'); $('app').classList.remove('hidden'); $('who').textContent=label; renderAll(); }
+
+async function loadData(){
+  const rows=[]; let from=0;
+  while(true){
+    const { data, error } = await sb.from('bookings').select('*').order('appt_date',{ascending:false}).range(from, from+999);
+    if(error){ toast('Could not load: '+error.message); break; }
+    rows.push(...data); if(data.length<1000) break; from+=1000;
+  }
+  ALL = rows;
+  sb.from('vip_list').select('email,created_at').order('created_at',{ascending:false}).then(({data})=>{ VIP=data||[]; $('vipCount').textContent='('+VIP.length+')'; });
+  checkOldBookings();
+  autoVerify();
+  if(!rows.length) $('who').textContent += ' · no bookings yet (or this login isn\'t the owner account)';
+  renderAll();
+}
+// Ask Supabase to confirm deposits with Paystack
+async function verifyOne(ref){
+  const { data, error } = await sb.functions.invoke('verify-payment',{ body:{ ref } });
+  if(error) throw error; return data;
+}
+let _verifying=false;
+async function autoVerify(){
+  if(DEMO || _verifying) return;
+  const todo=ALL.filter(b=>b.pay_ref && b.deposit>0 && b.deposit_verified==null && b.source==='website' && b.status!=='rescheduled').slice(0,15);
+  if(!todo.length) return; _verifying=true; let changed=false;
+  for(const b of todo){ try{ await verifyOne(b.ref); changed=true; }catch(e){ console.warn('verify',e); break; } }
+  _verifying=false; if(changed) loadData();
+}
+async function recheck(ref, btn){
+  btn.disabled=true; btn.textContent='Checking…';
+  try{ const r=await verifyOne(ref); toast(r.verified?'Deposit confirmed by Paystack ✓':'Paystack has no matching payment'); await loadData(); }
+  catch(e){ toast('Could not check: '+(e.message||e)); btn.disabled=false; btn.textContent='Check again'; }
+}
+function payBadge(b){
+  if(!b.deposit) return '';
+  if(b.deposit_verified===true) return `<span class="st completed" title="Paystack confirmed ${cedi(b.verified_amount)}">✓ Deposit verified</span>`;
+  if(b.deposit_verified===false) return `<span class="st no_show">⚠ Not verified</span> <button class="link" onclick="recheck('${esc(b.ref)}',this)">Check again</button>`;
+  if(b.source==='website') return `<span class="st booked">Checking deposit…</span>`;
+  return '';
+}
+
+async function saveRow(id, patch){
+  const b = ALL.find(x=>x.id===id); Object.assign(b, patch);
+  if(!DEMO){
+    const { error } = await sb.from('bookings').update(patch).eq('id', id);
+    if(error){ toast('Not saved: '+error.message); return; }
+  }
+  toast('Saved'); renderAll(true);
+}
+
+// ═════════ IMPORT OLD BOOKINGS (saved in this browser by the old website) ═════════
+const OLD_PRICES = {'Classic Regular':200,'Classic Cat Eye / Wispy':230,'Hybrid Regular':250,'Hybrid Cat Eye / Wispy':280,'Volume Regular':300,'Volume Cat Eye':330,'Volume Wispy':380,'Wet Set':260,'Doll Eye Set':270,'Anime Set':320,'Elle Set':320,"Angel's Set":350,'Lash Removal':100,'Refill':0,'Buttoms':80};
+function readOld(){
+  const out=[];
+  try{
+    const ext=JSON.parse(localStorage.getItem('lnl_bk_ext')||'[]');
+    (Array.isArray(ext)?ext:[]).forEach((o,i)=>{
+      if(!o||!o.name) return;
+      let d=null;
+      const m=/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/.exec(o.date||'');
+      if(m){ const mi=MONTHS.findIndex(x=>m[2].toLowerCase().startsWith(x.toLowerCase())); if(mi>=0) d=m[3]+'-'+pad(mi+1)+'-'+pad(+m[1]); }
+      if(!d && /^\d{4}-\d{2}-\d{2}/.test(o.date||'')) d=o.date.slice(0,10);
+      if(!d && o.timestamp) d=String(o.timestamp).slice(0,10);
+      if(!d) return;
+      const addons=[]; let adT=0;
+      if(/colou?red/i.test(o.addons||'')){ addons.push('Colored Lashes'); adT+=40; }
+      if(/butt?oms|bottoms/i.test(o.addons||'')){ addons.push('Bottoms'); adT+=80; }
+      const price = OLD_PRICES[o.service] ?? (o.deposit?Number(o.deposit)*2:0);
+      out.push({ ref: o.ref || ('LNL-OLD'+i+'-'+d.replace(/-/g,'')), pay_ref:o.payRef||null, client_name:o.name, phone:o.phone||'—', email:o.email||null,
+        service:o.service==='Buttoms'?'Bottoms':(o.service||'—'), service_price:price, addons, addons_total:adT, total:price+adT, deposit:Number(o.deposit)||0,
+        appt_date:d, appt_time:o.time||'—', notes:o.notes||null, status: d<TODAY?'completed':'booked', source:'old-site',
+        created_at: o.timestamp || null });
+    });
+  }catch(e){}
+  return out;
+}
+function checkOldBookings(){
+  const bar=$('importBar'); if(DEMO){ bar.classList.add('hidden'); return; }
+  let done=false; try{ done=localStorage.getItem('lnl_old_imported')==='1'; }catch(e){}
+  const old=readOld().filter(o=>!ALL.some(b=>b.ref===o.ref));
+  if(!old.length || done){ bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  bar.innerHTML=`✦ <span><b>Found ${old.length} older booking${old.length>1?'s':''} saved on this device</b> from the old website. Import them so they're part of your records? Past ones will be marked Completed. You can change any of them afterwards.</span> <button class="btn sm" id="impBtn">Import ${old.length}</button>`;
+  $('impBtn').onclick=async ()=>{
+    $('impBtn').disabled=true; $('impBtn').textContent='Importing…';
+    const rows=old.map(r=>{ const x={...r}; if(!x.created_at) delete x.created_at; return x; });
+    const { error } = await sb.from('bookings').upsert(rows,{ onConflict:'ref', ignoreDuplicates:true });
+    if(error){ toast('Import failed: '+error.message); $('impBtn').disabled=false; $('impBtn').textContent='Try again'; return; }
+    try{ localStorage.setItem('lnl_old_imported','1'); }catch(e){}
+    toast('Imported '+rows.length+' bookings'); bar.classList.add('hidden'); loadData();
+  };
+}
+
+// ═════════ DERIVED DATA ═════════
+function periodRange(p){
+  const n=new Date(), y=n.getFullYear(), m=n.getMonth();
+  const dd=n.getDate();
+  if(p==='week'){ const wd=(n.getDay()+6)%7; const mon=new Date(y,m,dd-wd), pm=new Date(y,m,dd-wd-7), pe=new Date(y,m,dd-7);
+                      return [ymd(mon), TODAY, 'this week', [ymd(pm), ymd(pe)], 'same point last week']; }
+  if(p==='month')     return [ymd(new Date(y,m,1)), TODAY, 'this month', [ymd(new Date(y,m-1,1)), ymd(new Date(y,m-1,Math.min(dd,new Date(y,m,0).getDate())))], 'same point last month'];
+  if(p==='lastmonth') return [ymd(new Date(y,m-1,1)), ymd(new Date(y,m,0)), 'last month', [ymd(new Date(y,m-2,1)), ymd(new Date(y,m-1,0))], 'the month before'];
+  if(p==='year')      return [y+'-01-01', TODAY, 'this year', [(y-1)+'-01-01',(y-1)+TODAY.slice(4)], 'same point last year'];
+  if(p==='lastyear')  return [(y-1)+'-01-01',(y-1)+'-12-31', 'last year', [(y-2)+'-01-01',(y-2)+'-12-31'], 'the year before'];
+  return ['0000-01-01','9999-12-31','all time', null, ''];
+}
+const inR = (b,[a,z]) => b.appt_date>=a && b.appt_date<=z;
+const done = b => b.status==='completed';
+// ── Reschedule rule: a no-show keeps the deposit as credit; up to 2 reschedules, within the same calendar month as the original booking.
+const MAX_RESCHED = 2;
+const monthEnd = s => { const d=parseD(s); return ymd(new Date(d.getFullYear(), d.getMonth()+1, 0)); };
+const origDate = b => b.original_date || b.appt_date;
+const resLeft  = b => MAX_RESCHED - (b.reschedule_count||0);
+const canResched = b => b.deposit>0 && b.deposit_verified!==false && ['booked','no_show'].includes(b.status) && resLeft(b)>0 && TODAY <= monthEnd(origDate(b));
+const forfeited  = b => b.status==='no_show' && b.deposit>0 && b.deposit_verified!==false && !canResched(b);
+const earns  = b => done(b) || forfeited(b);
+const earned = b => done(b) ? value(b) : (b.amount_paid!=null ? Number(b.amount_paid) : Number(b.verified_amount||b.deposit||0));
+
+// first completed visit per client → to tell new vs returning
+function firstVisitMap(){
+  const m={}; ALL.filter(done).forEach(b=>{ const k=normPhone(b.phone); if(!m[k]||b.appt_date<m[k]) m[k]=b.appt_date; }); return m;
+}
+function stats(range){
+  const rows = ALL.filter(b=>inR(b,range));
+  const comp = rows.filter(done);
+  const rev = rows.filter(earns).reduce((s,b)=>s+earned(b),0);
+  const kept = rows.filter(forfeited);
+  const fv = firstVisitMap();
+  const clients = new Set(comp.map(b=>normPhone(b.phone)));
+  const newC = range[0]==='0000-01-01' ? 0 : [...clients].filter(k=>fv[k]>=range[0] && fv[k]<=range[1]).length;
+  const cameBack = (()=>{ const c={}; comp.forEach(b=>{const k=normPhone(b.phone); c[k]=(c[k]||0)+1;}); return Object.values(c).filter(n=>n>1).length; })();
+  const closed = rows.filter(b=>b.status!=='booked' && b.appt_date<=TODAY);
+  const ns = rows.filter(b=>b.status==='no_show').length;
+  const cx = rows.filter(b=>b.status==='cancelled').length;
+  return { rows, comp, rev, kept, visits:comp.length, avg: comp.length?rev/comp.length:0, clients:clients.size, newC,
+           retC: clients.size-newC, cameBack, deposits: rows.filter(b=>b.status!=='cancelled' && b.deposit_verified!==false).reduce((s,b)=>s+Number(b.deposit_verified?(b.verified_amount||b.deposit):(b.deposit||0)),0),
+           unverified: rows.filter(b=>b.deposit>0 && b.deposit_verified===false && b.status!=='cancelled').length,
+           noShowRate: closed.length? ns/closed.length : 0, ns, cx };
+}
+function clientList(){
+  const m={};
+  [...ALL].sort((a,b)=>a.appt_date.localeCompare(b.appt_date)).forEach(b=>{
+    const k=normPhone(b.phone); if(!k) return;
+    const c = m[k] ||= { key:k, name:b.client_name, phone:b.phone, email:b.email, visits:0, spent:0, last:null, lastSet:null, lastSetSvc:null, next:null, svc:{}, hist:[], noShows:0 };
+    c.name=b.client_name||c.name; c.email=b.email||c.email; c.hist.push(b);
+    if(done(b)){ c.visits++; c.spent+=value(b); c.last=b.appt_date; c.svc[b.service]=(c.svc[b.service]||0)+1; if(b.tech){ (c.techs ||= {})[b.tech]=(c.techs[b.tech]||0)+1; }
+                 if(isSetVisit(b)){ c.lastSet=b.appt_date; c.lastSetSvc=b.service; } }
+    if(forfeited(b)) c.spent+=earned(b);
+    if(b.status==='no_show') c.noShows++;
+    if(b.status==='booked' && b.appt_date>=TODAY && (!c.next||b.appt_date<c.next.appt_date)) c.next=b;
+  });
+  Object.values(m).forEach(c=>{ c.fav = Object.entries(c.svc).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—'; c.tech = Object.entries(c.techs||{}).sort((a,b)=>b[1]-a[1])[0]?.[0] || '—'; });
+  return Object.values(m);
+}
+
+// ═════════ RENDER ═════════
+function renderAll(keepScroll){
+  const tomark = ALL.filter(b=>b.status==='booked' && b.appt_date<TODAY).length;
+  const due = fillGroups().due.length;
+  $('apptBadge').textContent=tomark; $('apptBadge').classList.toggle('hidden',!tomark);
+  $('fillBadge').textContent=due; $('fillBadge').classList.toggle('hidden',!due);
+  renderOverview(tomark); renderAppts(); renderClients(); renderFills();
+}
+
+function deltaHtml(cur, prev, label, money){
+  if(prev==null) return '';
+  if(!prev && !cur) return `<span>— vs ${label}</span>`;
+  if(!prev) return `<span class="up">new</span> vs ${label}`;
+  const pct = Math.round((cur-prev)/prev*100);
+  const cls = pct>0?'up':pct<0?'down':'';
+  return `<span class="${cls}">${pct>0?'▲':pct<0?'▼':''} ${Math.abs(pct)}%</span> vs ${label}`;
+}
+
+function renderTechTable(S, R){
+  $('techTitle').textContent='By lash tech · '+R[2];
+  const names=[...CFG.lashTechs]; S.rows.forEach(b=>{ if(b.tech && !names.includes(b.tech)) names.push(b.tech); });
+  const rowsHtml=names.map(t=>{
+    const mine=S.rows.filter(b=>b.tech===t), rev=mine.filter(earns).reduce((a,b)=>a+earned(b),0), visits=mine.filter(done).length;
+    // repeat clients: all-time, clients with 2+ completed visits with this tech
+    const per={}; ALL.filter(b=>b.tech===t && done(b)).forEach(b=>{ const k=normPhone(b.phone); per[k]=(per[k]||0)+1; });
+    const clients=Object.keys(per).length, rep=Object.values(per).filter(n=>n>1).length;
+    const upcoming=ALL.filter(b=>b.tech===t && b.status==='booked' && b.appt_date>=TODAY).length;
+    return `<tr><td><b style="font-weight:500">${esc(t)}</b></td><td class="r num">${cedi(rev)}</td><td class="r num">${visits}</td><td class="r num">${visits?cedi(rev/visits):'—'}</td><td class="r num">${rep} of ${clients}${clients?` <span style="color:var(--muted)">(${Math.round(rep/clients*100)}%)</span>`:''}</td><td class="r num">${upcoming}</td></tr>`;
+  }).join('');
+  const none=S.rows.filter(b=>!b.tech && earns(b)).length;
+  $('techTable').innerHTML=`<thead><tr><th>Tech</th><th class="r">Revenue</th><th class="r">Visits</th><th class="r">Avg / visit</th><th class="r">Repeat clients (all time)</th><th class="r">Upcoming</th></tr></thead><tbody>${rowsHtml}</tbody>`+
+    (none?`<tfoot><tr><td colspan="6" style="color:var(--muted);font-size:.8rem">${none} visit${none>1?'s':''} in this period have no tech recorded (booked before techs were added).</td></tr></tfoot>`:'');
+}
+
+function renderOverview(tomark){
+  const R = periodRange(period), S = stats(R), P = R[3] ? stats(R[3]) : null;
+  $('nudge').classList.toggle('hidden', !tomark);
+  $('nudge').innerHTML = `⚠ <span><b>${tomark} past appointment${tomark>1?'s are':' is'} still marked "Booked".</b> Mark them completed, no-show or cancelled so your revenue figures are right.</span> <button class="btn sm" onclick="goTab('appts','tomark')">Update now</button>`;
+  const k = (lbl,val,d)=>`<div class="card kpi"><div class="lbl">${lbl}</div><div class="val num">${val}</div><div class="delta">${d||'&nbsp;'}</div></div>`;
+  $('kpis').innerHTML =
+    k('Revenue · '+R[2], cedi(S.rev), P&&deltaHtml(S.rev,P.rev,R[4])) +
+    k('Completed visits', S.visits, P&&deltaHtml(S.visits,P.visits,R[4])) +
+    k('Average per visit', cedi(S.avg), P&&deltaHtml(S.avg,P.avg,R[4])) +
+    k('Clients served', S.clients, period==='all' ? `${S.cameBack} came back more than once` : `${S.newC} new · ${S.retC} returning`) +
+    k('Deposits taken', cedi(S.deposits), S.unverified ? `<span class="down">⚠ ${S.unverified} not verified — see Appointments</span>` : 'confirmed with Paystack') +
+    k('No-shows', S.ns, S.ns||S.cx ? `${Math.round(S.noShowRate*100)}% of appointments · ${S.cx} cancelled${S.kept.length?` · ${cedi(S.kept.reduce((a,b)=>a+earned(b),0))} deposits kept`:''}` : 'none 🎉');
+
+  // revenue last 12 months
+  const n=new Date(), months=[];
+  for(let i=11;i>=0;i--){ const d=new Date(n.getFullYear(), n.getMonth()-i, 1); const key=d.getFullYear()+'-'+pad(d.getMonth()+1);
+    const rows=ALL.filter(b=>earns(b)&&b.appt_date.startsWith(key));
+    months.push({ label:MONTHS[d.getMonth()], full:MONTHS[d.getMonth()]+' '+d.getFullYear(), v:rows.reduce((s,b)=>s+earned(b),0), c:rows.filter(done).length }); }
+  barChart($('revChart'), months, m=>`<b>${m.full}</b><br>${cedi(m.v)} · ${m.c} visit${m.c===1?'':'s'}`, true);
+
+  // services
+  const svc={}; S.comp.forEach(b=>{ const s=svc[b.service] ||= {n:0,v:0}; s.n++; s.v+=value(b); });
+  const svcArr=Object.entries(svc).sort((a,b)=>b[1].n-a[1].n||b[1].v-a[1].v);
+  $('svcTitle').textContent='Most booked services · '+R[2];
+  hbars($('svcBars'), svcArr.map(([nm,s])=>({nm, n:s.n, txt:`${s.n} · ${cedi(s.v)}`})));
+
+  // days & times
+  const dayCount=[0,0,0,0,0,0,0]; const times={};
+  S.comp.forEach(b=>{ dayCount[parseD(b.appt_date).getDay()]++; times[b.appt_time]=(times[b.appt_time]||0)+1; });
+  const order=[1,2,3,4,5,6,0];
+  barChart($('dayChart'), order.map(i=>({label:DAYS[i], v:dayCount[i], closed:i===2})), d=> d.closed?'<b>Tuesday</b><br>Closed':`<b>${d.label}</b><br>${d.v} visit${d.v===1?'':'s'}`, false, 150);
+  hbars($('timeBars'), Object.entries(times).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([t,n])=>({nm:t,n,txt:n+' visit'+(n===1?'':'s')})));
+
+  // new vs returning visits
+  const fv=firstVisitMap(); let nv=0, rv=0; S.comp.forEach(b=>{ if(fv[normPhone(b.phone)]===b.appt_date) nv++; else rv++; });
+  hbars($('nvrBars'), S.comp.length?[{nm:'First visit',n:nv,txt:nv+' · '+Math.round(nv/S.comp.length*100)+'%'},{nm:'Returning',n:rv,txt:rv+' · '+Math.round(rv/S.comp.length*100)+'%'}]:[]);
+  const ad={}; let withSet=0; S.comp.forEach(b=>{ if(isSetVisit(b)&&b.service!=='Refill') withSet++; (b.addons||[]).forEach(a=>ad[a]=(ad[a]||0)+1); });
+  hbars($('addonBars'), Object.entries(ad).sort((a,b)=>b[1]-a[1]).map(([nm,n])=>({nm,n,txt:`${n} · ${withSet?Math.round(n/withSet*100):0}% of sets`})));
+
+  renderTechTable(S, R);
+  renderInsights(S, P, R, svcArr, dayCount);
+}
+
+function renderInsights(S, P, R, svcArr, dayCount){
+  const out=[];
+  if(!ALL.length){ $('insights').innerHTML='<li>Once bookings start coming in, patterns and tips will show up here.</li>'; return; }
+  const setsOnly=svcArr.filter(([n])=>n!=='Refill'&&!NON_SET.includes(n));
+  if(setsOnly.length){ svcArr=setsOnly;
+    const byRev=[...svcArr].sort((a,b)=>b[1].v-a[1].v)[0];
+    out.push(`<b>${esc(svcArr[0][0])}</b> is your most booked set ${R[2]}${byRev[0]!==svcArr[0][0]?`, but <b>${esc(byRev[0])}</b> brings in the most money (${cedi(byRev[1].v)})`:` and also your top earner (${cedi(byRev[1].v)})`}.`);
+  }
+  const open=[1,3,4,5,6,0];
+  if(S.visits>=5){
+    const busiest=open.reduce((a,b)=>dayCount[b]>dayCount[a]?b:a), quiet=open.reduce((a,b)=>dayCount[b]<dayCount[a]?b:a);
+    out.push(`<b>${DAYS[busiest]}</b> is your busiest day and <b>${DAYS[quiet]}</b> the quietest. A small ${DAYS[quiet]}-only offer could fill those empty slots.`);
+  }
+  const cl=clientList(), active=cl.filter(c=>c.visits>0);
+  if(active.length>=3){
+    const rep=active.filter(c=>c.visits>1).length;
+    out.push(`<b>${Math.round(rep/active.length*100)}%</b> of your clients have come back at least once. Every fill-in reminder you send helps push this up.`);
+    const top=[...active].sort((a,b)=>b.spent-a.spent).slice(0,3).map(c=>esc(c.name.split(' ')[0]));
+    out.push(`Your top-spending clients are <b>${top.join(', ')}</b>. They're worth a thank-you or a loyalty perk.`);
+  }
+  const lapsed=fillGroups().lapsed.length; if(lapsed) out.push(`<b>${lapsed}</b> client${lapsed>1?'s haven\'t':' hasn\'t'} been back in over 6 weeks. See the Fill-ins tab to win them back.`);
+  if(S.noShowRate>=.1) out.push(`No-shows are at <b>${Math.round(S.noShowRate*100)}%</b>. A WhatsApp reminder the day before usually helps.`);
+  if(P && P.rev && S.rev) { const pct=Math.round((S.rev-P.rev)/P.rev*100); out.push(`Revenue is ${pct>=0?'up':'down'} <b>${Math.abs(pct)}%</b> compared with ${R[4]}.`); }
+  $('insights').innerHTML = out.map(t=>`<li><span>${t}</span></li>`).join('') || '<li>Not enough visits in this period yet.</li>';
+}
+
+// SVG vertical bar chart (single series) with hover tooltip
+function barChart(el, data, tipFn, money, H=220){ H = Math.min(H, Math.max(150, (el.clientWidth||600)*.42));
+  const W=Math.max(300, Math.round(el.clientWidth||600)), padL=money?48:28, padB=24, padT=10, max=Math.max(1,...data.map(d=>d.v));
+  const step = niceStep(max/4), top=Math.ceil(max/step)*step || 1;
+  const bw=(W-padL)/data.length, barW=Math.min(34,bw*.62);
+  const y=v=>padT+(H-padT-padB)*(1-v/top);
+  let g='';
+  for(let t=0;t<=top;t+=step){ g+=`<line class="gl" x1="${padL}" x2="${W}" y1="${y(t)}" y2="${y(t)}"/><text x="${padL-6}" y="${y(t)+4}" text-anchor="end">${money?(t>=1000?(t/1000)+'k':t):t}</text>`; }
+  data.forEach((d,i)=>{
+    const cx=padL+bw*i+bw/2, h=y(0)-y(d.v), r=Math.min(4,h/2);
+    const x0=cx-barW/2, yt=y(d.v);
+    const path = d.v>0 ? `M${x0},${y(0)} V${yt+r} Q${x0},${yt} ${x0+r},${yt} H${x0+barW-r} Q${x0+barW},${yt} ${x0+barW},${yt+r} V${y(0)} Z` : '';
+    g+=`<rect class="hit" data-i="${i}" x="${padL+bw*i}" y="${padT}" width="${bw}" height="${H-padT-padB}"/>`;
+    g+= path?`<path class="bar" d="${path}"/>`:`<path class="bar"/>`;
+    g+=`<text x="${cx}" y="${H-6}" text-anchor="middle">${d.label}${d.closed?'*':''}</text>`;
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="bar chart">${g}</svg><div class="tip"></div>`;
+  const tip=el.querySelector('.tip'), svg=el.querySelector('svg');
+  el.querySelectorAll('.hit').forEach(h=>{
+    const show=()=>{ const i=+h.dataset.i, d=data[i]; tip.innerHTML=tipFn(d);
+      const sr=svg.getBoundingClientRect(), sc=sr.width/W; tip.style.left=((padL+bw*i+bw/2)*sc)+'px'; tip.style.top=(y(d.v)*sc)+'px'; tip.style.opacity=1;
+      el.querySelectorAll('.bar').forEach((b,j)=>b.classList.toggle('hl',j===i)); };
+    h.addEventListener('mouseenter',show); h.addEventListener('click',show);
+    h.addEventListener('mouseleave',()=>{ tip.style.opacity=0; el.querySelectorAll('.bar').forEach(b=>b.classList.remove('hl')); });
+  });
+}
+function niceStep(raw){ const p=Math.pow(10,Math.floor(Math.log10(Math.max(raw,1)))); const f=raw/p; return (f<=1?1:f<=2?2:f<=5?5:10)*p; }
+function hbars(el, items){
+  if(!items.length){ el.innerHTML='<div class="empty">No completed visits in this period yet.</div>'; return; }
+  const max=Math.max(...items.map(i=>i.n));
+  el.innerHTML = items.map(i=>`<div class="hb"><div class="nm" title="${esc(i.nm)}">${esc(i.nm)}</div><div class="tr"><div class="fl" style="width:${Math.max(2,i.n/max*100)}%"></div></div><div class="v num">${i.txt}</div></div>`).join('');
+}
+
+// ── Reschedule ──
+function resInfo(b){
+  const used=b.reschedule_count||0, endTxt=fmtDateY(monthEnd(origDate(b)));
+  if(b.status==='rescheduled') return `<div class="sub" style="margin-top:4px"><span class="st rescheduled">↻ Moved to a new date</span></div>`;
+  if(b.status==='no_show' && canResched(b)) return `<div class="sub" style="margin-top:4px"><span class="st held">Deposit held · ${resLeft(b)} reschedule${resLeft(b)>1?'s':''} left · until ${endTxt}</span></div>`;
+  if(forfeited(b)) return `<div class="sub" style="margin-top:4px"><span class="st no_show">Deposit kept · ${cedi(earned(b))} counted as revenue</span></div>`;
+  if(used) return `<div class="sub" style="margin-top:4px"><span class="tag" style="margin-left:0">Reschedule ${used} of ${MAX_RESCHED}</span></div>`;
+  return '';
+}
+const WK_SLOTS=['9:00 AM','10:30 AM','12:00 PM','2:00 PM','3:30 PM','5:00 PM','6:30 PM'], SUN_SLOTS=['2:00 PM','3:30 PM','5:00 PM','6:30 PM'];
+const BROW_WK=['11:00 AM','1:00 PM','3:00 PM','5:00 PM'], BROW_SUN=['2:00 PM','4:00 PM'];
+const isBrowSvc = s => /^Brow/i.test(s||'');
+let RB=null;
+function openResched(id){
+  RB=ALL.find(x=>x.id===id); if(!RB) return;
+  const end=monthEnd(origDate(RB));
+  $('rInfo').innerHTML=`<b>${esc(RB.client_name)}</b> · ${esc(RB.service)}<br>Deposit ${cedi(RB.verified_amount||RB.deposit)} carries over. This will be reschedule <b>${(RB.reschedule_count||0)+1} of ${MAX_RESCHED}</b>.<br>New date must be on or before <b>${fmtDateY(end)}</b>.`;
+  $('rTech').value=RB.tech||CFG.lashTechs[0]; $('rDate').min=TODAY; $('rDate').max=end; $('rDate').value=''; $('rTime').innerHTML='<option value="">Pick a date first</option>';
+  $('reschedModal').classList.remove('hidden');
+}
+function reschedSlots(){
+  const d=$('rDate').value; if(!d){ return; }
+  const day=parseD(d).getDay();
+  if(day===2){ $('rTime').innerHTML='<option value="">Closed on Tuesdays</option>'; return; }
+  const tech=$('rTech').value;
+  const brow=isBrowSvc(RB.service);
+  const taken=ALL.filter(b=>b.appt_date===d && ['booked','completed'].includes(b.status) && isBrowSvc(b.service)===brow && (brow || !b.tech || b.tech===tech)).map(b=>b.appt_time);
+  $('rTime').innerHTML='<option value="">Choose a time</option>'+(brow?(day===0?BROW_SUN:BROW_WK):(day===0?SUN_SLOTS:WK_SLOTS)).map(t=>`<option ${taken.includes(t)?'disabled':''} value="${t}">${t}${taken.includes(t)?' (booked)':''}</option>`).join('');
+}
+async function saveResched(){
+  const b=RB, d=$('rDate').value, t=$('rTime').value, end=monthEnd(origDate(b));
+  if(!d||!t){ toast('Pick a new date and time'); return; }
+  if(d<TODAY||d>end){ toast('The new date must be between today and '+fmtDateY(end)); return; }
+  if(parseD(d).getDay()===2){ toast('Closed on Tuesdays'); return; }
+  const n=(b.reschedule_count||0)+1;
+  const row={ ref:(b.ref||('LNL-'+Date.now().toString().slice(-6)))+'-R'+n, pay_ref:b.pay_ref, client_name:b.client_name, phone:b.phone, email:b.email,
+    service:b.service, service_price:b.service_price, addons:b.addons||[], addons_total:b.addons_total||0, total:b.total, deposit:b.deposit,
+    deposit_verified:b.deposit_verified, verified_amount:b.verified_amount, verified_at:b.verified_at, appt_date:d, appt_time:t, tech:$('rTech').value||b.tech||null, notes:b.notes,
+    status:'booked', source:b.source||'website', reschedule_count:n, rescheduled_from:b.id, original_date:origDate(b) };
+  $('rSave').disabled=true;
+  if(DEMO){ row.id='demo-'+Date.now(); ALL.push(row); b.status='rescheduled'; }
+  else {
+    const { data, error } = await sb.from('bookings').insert(row).select().single();
+    if(error){ toast('Not saved: '+error.message); $('rSave').disabled=false; return; }
+    const u = await sb.from('bookings').update({status:'rescheduled'}).eq('id', b.id);
+    if(u.error) toast('New date saved, but the old booking was not updated: '+u.error.message);
+    ALL.push(data); b.status='rescheduled';
+  }
+  $('rSave').disabled=false; $('reschedModal').classList.add('hidden');
+  const msg=`Hi ${b.client_name.split(' ')[0]}! 🌸 Your Lush & Luxe appointment has been rescheduled to ${fmtDateY(d)} at ${t}. Your deposit has been carried over. This is reschedule ${n} of ${MAX_RESCHED}. See you then! 💕`;
+  $('rWa').href='https://wa.me/'+normPhone(b.phone)+'?text='+encodeURIComponent(msg);
+  $('rDone').classList.remove('hidden'); renderAll();
+}
+
+// ── Appointments ──
+function renderAppts(){
+  let rows=[...ALL], hint='';
+  if(apptFilter==='held'){ rows=rows.filter(b=>b.status==='no_show'&&canResched(b)).sort((a,b)=>a.appt_date.localeCompare(b.appt_date)); hint='Clients who missed their appointment. Their deposit is held, and they can reschedule up to 2 times within the same month. Tap Reschedule when they message you.'; }
+  else if(apptFilter==='upcoming'){ rows=rows.filter(b=>b.appt_date>=TODAY && !['cancelled','rescheduled'].includes(b.status)).sort((a,b)=>a.appt_date.localeCompare(b.appt_date)||toMins(a.appt_time)-toMins(b.appt_time)); hint='Today and coming up.'; }
+  else if(apptFilter==='tomark'){ rows=rows.filter(b=>b.status==='booked'&&b.appt_date<TODAY).sort((a,b)=>a.appt_date.localeCompare(b.appt_date)); hint='These dates have passed. Set each one to Completed, No-show or Cancelled. For refills, or if the price changed on the day, type what the client actually paid.'; }
+  else if(apptFilter==='past'){ rows=rows.filter(b=>b.appt_date<TODAY).sort((a,b)=>b.appt_date.localeCompare(a.appt_date)); }
+  else rows.sort((a,b)=>b.appt_date.localeCompare(a.appt_date));
+  const tf=$('techFilter').value; if(tf) rows=rows.filter(b=>b.tech===tf);
+  $('apptHint').textContent=hint;
+  const shown=rows.slice(0,200);
+  $('apptList').innerHTML = shown.length ? shown.map(b=>`
+    <div class="row">
+      <div class="when"><b>${b.appt_date===TODAY?'Today':fmtDate(b.appt_date)}</b>${esc(b.appt_time)}</div>
+      <div>
+        <div class="nm">${esc(b.client_name)} <span class="st ${b.status}">${b.status.replace('_','-')}</span>${b.tech?`<span class="tag">👩🏾 ${esc(b.tech)}</span>`:''}${b.source&&b.source!=='website'?`<span class="tag">${esc(b.source)}</span>`:''}</div>
+        <div class="sub">${esc(b.service)}${(b.addons||[]).length?' + '+b.addons.map(esc).join(' + '):''} · ${b.total?cedi(b.total):'price on the day'}${b.deposit?' · deposit '+cedi(b.deposit):''} ${payBadge(b)}</div>
+        <div class="sub" style="color:var(--muted)">${esc(b.phone)}${b.notes?' · “'+esc(b.notes)+'”':''}</div>
+        ${resInfo(b)}
+      </div>
+      <div class="act">
+        <select class="sel" onchange="saveRow('${b.id}',{status:this.value})">
+          ${['booked','completed','no_show','cancelled'].concat(b.status==='rescheduled'?['rescheduled']:[]).map(s=>`<option value="${s}" ${b.status===s?'selected':''}>${{booked:'Booked',completed:'Completed',no_show:'No-show',cancelled:'Cancelled',rescheduled:'Rescheduled'}[s]}</option>`).join('')}
+        </select>
+        <input class="amt num" type="number" inputmode="numeric" placeholder="Paid ₵" title="Amount actually paid (leave blank = listed price)" value="${b.amount_paid??''}" onchange="saveRow('${b.id}',{amount_paid:this.value===''?null:Math.round(+this.value)})"/>
+        ${canResched(b)?`<button class="btn sm" onclick="openResched('${b.id}')">↻ Reschedule</button>`:''}
+      </div>
+    </div>`).join('') + (rows.length>200?`<div class="empty">Showing 200 of ${rows.length}</div>`:'')
+    : `<div class="empty">${apptFilter==='tomark'?'All caught up ✓':'Nothing here yet.'}</div>`;
+}
+
+// ── Clients ──
+function renderClients(){
+  const q=$('cSearch').value.trim().toLowerCase();
+  let cl=clientList();
+  const active=cl.filter(c=>c.visits>0), rep=active.filter(c=>c.visits>1);
+  const k=(l,v,d)=>`<div class="card kpi"><div class="lbl">${l}</div><div class="val num">${v}</div><div class="delta">${d||'&nbsp;'}</div></div>`;
+  $('clientKpis').innerHTML = k('Total clients', cl.length, `${active.length} have completed a visit`) +
+    k('Came back', active.length?Math.round(rep.length/active.length*100)+'%':'—', `${rep.length} returning clients`) +
+    k('Avg. lifetime spend', cedi(active.length?active.reduce((s,c)=>s+c.spent,0)/active.length:0), 'per client') +
+    k('Avg. visits per client', active.length?(active.reduce((s,c)=>s+c.visits,0)/active.length).toFixed(1):'—', '');
+  if(q) cl=cl.filter(c=>(c.name||'').toLowerCase().includes(q)||c.key.includes(q.replace(/\D/g,'')||'~'));
+  const keyF={tech:c=>c.tech,name:c=>(c.name||'').toLowerCase(),visits:c=>c.visits,spent:c=>c.spent,last:c=>c.last||'',fav:c=>c.fav};
+  cl.sort((a,b)=>{ const A=keyF[sortKey](a),B=keyF[sortKey](b); return (A>B?1:A<B?-1:0)*sortDir; });
+  const th=(k,l,r)=>`<th class="${r?'r':''}" onclick="sortBy('${k}')">${l}${sortKey===k?(sortDir>0?' ↑':' ↓'):''}</th>`;
+  $('cTable').innerHTML = `<thead><tr>${th('name','Client')}${th('visits','Visits',1)}${th('spent','Spent',1)}${th('last','Last visit')}${th('fav','Favourite')}${th('tech','Tech')}<th>Next</th></tr></thead><tbody>` +
+    (cl.length ? cl.map(c=>`<tr class="cl" onclick="toggleClient('${c.key}')"><td><b style="font-weight:500">${esc(c.name)}</b>${c.visits>=4?'<span class="tag">Loyal</span>':''}${c.noShows?`<span class="tag" style="color:var(--bad)">${c.noShows} no-show</span>`:''}<br><span style="color:var(--muted);font-size:.8rem">${esc(c.phone)}</span></td><td class="r num">${c.visits}</td><td class="r num">${cedi(c.spent)}</td><td>${c.last?fmtDateY(c.last):'—'}</td><td>${esc(c.fav)}</td><td>${esc(c.tech)}</td><td>${c.next?fmtDate(c.next.appt_date):'—'}</td></tr>`+
+      (openClient===c.key?`<tr><td colspan="7" class="hist">${[...c.hist].reverse().map(b=>`<div>${fmtDateY(b.appt_date)} · ${esc(b.appt_time)} — ${esc(b.service)}${b.tech?' · with '+esc(b.tech):''}${(b.addons||[]).length?' + '+b.addons.map(esc).join(' + '):''} · <span class="st ${b.status}">${b.status.replace('_','-')}</span> ${done(b)?cedi(value(b)):''}${b.notes?' · “'+esc(b.notes)+'”':''}</div>`).join('')}<div style="margin-top:8px"><a class="btn sm wa" target="_blank" href="${waLink(c,'Hi '+c.name.split(' ')[0]+'! ')}">WhatsApp ${esc(c.name.split(' ')[0])}</a>${c.email?` <a class="btn sm ghost" href="mailto:${esc(c.email)}">Email</a>`:''}</div></td></tr>`:'')
+    ).join('') : `<tr><td colspan="7" class="empty">No clients ${q?'match that search':'yet'}.</td></tr>`) + '</tbody>';
+}
+function sortBy(k){ if(sortKey===k) sortDir*=-1; else { sortKey=k; sortDir=(k==='name'||k==='fav')?1:-1; } renderClients(); }
+function toggleClient(k){ openClient = openClient===k?null:k; renderClients(); }
+function waLink(c,msg){ return 'https://wa.me/'+c.key+'?text='+encodeURIComponent(msg); }
+
+// ── Fill-ins ──
+function fillGroups(){
+  const g={due:[],overdue:[],lapsed:[]};
+  clientList().forEach(c=>{
+    if(!c.lastSet || c.next) return;
+    const d=daysBetween(c.lastSet, TODAY); c.since=d;
+    if(d>=CFG.fillDueFrom && d<=CFG.fillDueTo) g.due.push(c);
+    else if(d>CFG.fillDueTo && d<=42) g.overdue.push(c);
+    else if(d>42 && d<=180) g.lapsed.push(c);
+  });
+  Object.values(g).forEach(a=>a.sort((x,y)=>x.since-y.since));
+  return g;
+}
+function renderFills(){
+  const g=fillGroups();
+  const block=(title,hint,arr,msg)=>`<div class="fill-group"><h3>${title} <span style="color:var(--muted);font-size:1rem">(${arr.length})</span></h3><p class="hint">${hint}</p><div class="list">${
+    arr.length?arr.map(c=>`<div class="row"><div class="when"><b>${c.since} days</b>since last set</div><div><div class="nm">${esc(c.name)}</div><div class="sub">Last: ${esc(c.lastSetSvc)} on ${fmtDateY(c.lastSet)} · ${c.visits} visit${c.visits===1?'':'s'} · ${cedi(c.spent)} spent</div></div><div class="act"><a class="btn sm wa" target="_blank" href="${waLink(c,msg(c))}">Send WhatsApp</a></div></div>`).join('')
+    :'<div class="empty">No one right now.</div>'}</div></div>`;
+  const first=c=>c.name.split(' ')[0];
+  $('fillWrap').innerHTML =
+    block('Due for a fill-in', `${CFG.fillDueFrom}–${CFG.fillDueTo} days since their last set, with nothing booked yet.`, g.due,
+      c=>`Hi ${first(c)}! 🌸 It's been about ${Math.round(c.since/7)} weeks since your ${c.lastSetSvc==='Refill'?'last fill':c.lastSetSvc}. It's the perfect time for a fill-in to keep them looking full. Book here: ${CFG.studioUrl} 💕 Lush & Luxe Studio`) +
+    block('Overdue', 'Between 3 and 6 weeks. Soon they\'ll need a full set instead of a fill.', g.overdue,
+      c=>`Hi ${first(c)}! 🌸 We miss you at Lush & Luxe! Your lashes are probably ready for some love. Book your next appointment here: ${CFG.studioUrl} 💕`) +
+    block('Haven\'t been back in a while', 'Over 6 weeks. A personal message or small offer can win them back.', g.lapsed,
+      c=>`Hi ${first(c)}! 🌸 It's been a while and we'd love to see you again at Lush & Luxe Studio. Book here: ${CFG.studioUrl} 💕`);
+}
+
+// ── VIP list export ──
+let VIP=[];
+$('vipBtn').onclick=()=>{
+  if(!VIP.length){ toast('No VIP sign-ups yet'); return; }
+  const csv=['email,joined'].concat(VIP.map(v=>v.email+','+String(v.created_at).slice(0,10))).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='lushnluxe-vip-list-'+TODAY+'.csv'; a.click();
+};
+// ── CSV export ──
+$('csvBtn').onclick=()=>{
+  const cols=['appt_date','appt_time','tech','client_name','phone','email','service','addons','total','deposit','amount_paid','status','source','ref','pay_ref','notes','created_at'];
+  const q=v=>{ v=Array.isArray(v)?v.join('; '):(v??''); v=String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const csv=[cols.join(',')].concat(ALL.map(b=>cols.map(c=>q(b[c])).join(','))).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='lushnluxe-bookings-'+TODAY+'.csv'; a.click();
+};
+
+// ── Add booking ──
+$('techFilter').innerHTML='<option value="">All techs</option>'+CFG.lashTechs.map(t=>`<option>${esc(t)}</option>`).join('');
+$('aTech').innerHTML=CFG.lashTechs.map(t=>`<option>${esc(t)}</option>`).join('');
+$('rTech').innerHTML=CFG.lashTechs.map(t=>`<option>${esc(t)}</option>`).join('');
+$('aSvc').innerHTML=SERVICES.map(([n,p])=>`<option value="${esc(n)}" data-p="${p}">${esc(n)}${p?' — ₵'+p:''}</option>`).join('');
+$('aSvc').onchange=()=>{ $('aPrice').value=$('aSvc').selectedOptions[0].dataset.p||''; };
+$('addBtn').onclick=()=>{ $('addModal').classList.remove('hidden'); $('aDate').value=TODAY; $('aSvc').onchange(); };
+$('aCancel').onclick=()=>$('addModal').classList.add('hidden');
+$('aSave').onclick=async ()=>{
+  const row={ client_name:$('aName').value.trim(), phone:$('aPhone').value.trim(), service:$('aSvc').value, service_price:+$('aPrice').value||0,
+    total:+$('aPrice').value||0, appt_date:$('aDate').value, appt_time:$('aTime').value.trim()||'—', status:$('aStatus').value,
+    source:$('aSource').value, tech:$('aTech').value||null, notes:$('aNotes').value.trim()||null, ref:'LNL-M'+Date.now().toString().slice(-6) };
+  if(!row.client_name||!row.phone||!row.appt_date){ toast('Name, phone and date are needed'); return; }
+  if(DEMO){ row.id='demo-'+Date.now(); row.addons=[]; row.deposit=0; ALL.push(row); }
+  else { const { data, error } = await sb.from('bookings').insert(row).select().single(); if(error){ toast('Not saved: '+error.message); return; } ALL.push(data); }
+  $('addModal').classList.add('hidden'); ['aName','aPhone','aTime','aNotes'].forEach(i=>$(i).value=''); toast('Booking added'); renderAll();
+};
+
+// ── tabs & filters ──
+function goTab(t, f){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  ['overview','appts','clients','fills'].forEach(x=>$('tab-'+x).classList.toggle('hidden',x!==t));
+  if(f){ apptFilter=f; document.querySelectorAll('#apptChips .chip').forEach(c=>c.classList.toggle('on',c.dataset.f===f)); renderAppts(); }
+  scrollTo({top:0});
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
+document.querySelectorAll('#periodChips .chip').forEach(c=>c.onclick=()=>{ period=c.dataset.p; document.querySelectorAll('#periodChips .chip').forEach(x=>x.classList.toggle('on',x===c)); renderOverview(ALL.filter(b=>b.status==='booked'&&b.appt_date<TODAY).length); });
+document.querySelectorAll('#apptChips .chip').forEach(c=>c.onclick=()=>goTab('appts',c.dataset.f));
+$('cSearch').oninput=renderClients;
+
+// ═════════ DEMO DATA (preview only) ═════════
+function makeDemo(){
+  let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return (seed-1)/2147483646; };
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const names=['Ama Mensah','Akosua Boateng','Efua Owusu','Abena Asante','Adwoa Darko','Yaa Ofori','Esi Quaye','Afia Appiah','Nana Adjei','Maame Sarpong','Dede Tetteh','Naa Lamptey','Selasi Agbeko','Elikem Dzifa','Kukua Arthur','Araba Hagan','Serwaa Amponsah','Linda Ansah','Gifty Nkrumah','Priscilla Oduro','Mabel Kyei','Rita Badu','Joyce Frimpong','Doris Acheampong','Vida Addo','Josephine Opoku','Akua Gyamfi','Adjoa Antwi','Comfort Boakye','Sena Kpodo','Dzidzor Amedzro','Hannah Owusu-Ansah','Grace Bonsu','Ewurabena Koomson','Theodora Yeboah','Princess Afriyie'];
+  const clients=names.map((n,i)=>({n, p:'+233 '+pick(['24','54','55','20','50','27'])+' '+String(1000000+Math.floor(rnd()*8999999)).slice(0,3)+' '+String(1000+Math.floor(rnd()*8999)), e:n.split(' ')[0].toLowerCase()+'@example.com', loyal:rnd()<.35}));
+  const sets=[['Classic Cat Eye / Wispy',250,22],['Hybrid Cat Eye',300,18],['Wispy',300,12],['Volume Cat Eye',350,12],['Volume Wispy',400,10],['Wet Set',280,8],['Elle Set',300,5],['Anime Set',320,6],['Doll Eye Set',280,6],['Custom Set',400,3]];
+  const wsum=sets.reduce((s,x)=>s+x[2],0); const pickSet=()=>{ let r=rnd()*wsum; for(const s of sets){ r-=s[2]; if(r<=0) return s; } return sets[0]; };
+  const WK=['9:00 AM','10:30 AM','11:45 AM','1:00 PM','2:30 PM','4:00 PM','5:30 PM','6:30 PM'], SUN=['2:00 PM','3:30 PM','4:30 PM','5:30 PM','6:30 PM'];
+  const rows=[]; const start=new Date(); start.setMonth(start.getMonth()-13); let id=0;
+  clients.forEach((c,ci)=>{
+    let d=new Date(start.getTime()+rnd()*300*86400000); let last=null; const myTech=CFG.lashTechs[ci%CFG.lashTechs.length];
+    while(true){
+      if(d.getDay()===2) d.setDate(d.getDate()+1);
+      const ds=ymd(d); if(ds>ymd(new Date(Date.now()+12*86400000))) break;
+      const isRefill = last && rnd()<.55 && daysBetween(last.appt_date, ds)<=24;
+      const s = isRefill ? ['Refill',0] : pickSet();
+      const ad=[]; if(!isRefill && rnd()<.18) ad.push('Colored Lashes'); if(!isRefill && rnd()<.25) ad.push('Bottoms');
+      const adT=(ad.includes('Colored Lashes')?40:0)+(ad.includes('Bottoms')?100:0);
+      const total=s[1]+adT, future=ds>=TODAY;
+      const r=rnd(); let status = future?'booked': r<.06?'no_show': r<.09?'cancelled': (ds>=ymd(new Date(Date.now()-5*86400000)) && rnd()<.5)?'booked':'completed';
+      const base = isRefill ? Math.round((last?.service_price||300)/2) : null;
+      rows.push({ id:'demo-'+(id++), created_at:ds, ref:'LNL-'+(100000+id), pay_ref:s[1]?'T'+id:null, client_name:c.n, phone:c.p, email:c.e,
+        service:s[0], service_price:s[1], addons:ad, addons_total:adT, total, deposit:s[1]?Math.ceil(s[1]/2):0, appt_date:ds,
+        tech: rnd()<.85?myTech:pick(CFG.lashTechs), appt_time: d.getDay()===0?pick(SUN):pick(WK), notes: rnd()<.08?pick(['Sensitive eyes','Prefers natural look','First time getting lashes','Allergic to some glues']):null,
+        status, amount_paid: isRefill && status==='completed' ? base : null, source: rnd()<.15?'whatsapp':'website',
+        deposit_verified: s[1]? (rnd()<.97) : null, verified_amount: s[1]?Math.ceil(s[1]/2):null });
+      if(!isRefill) last=rows[rows.length-1];
+      if(!c.loyal && rnd()<.45) break;
+      d=new Date(d.getTime()+(c.loyal?14+rnd()*14:18+rnd()*50)*86400000);
+    }
+  });
+  return rows;
+}
+
+let _rw; addEventListener('resize',()=>{ clearTimeout(_rw); _rw=setTimeout(()=>{ if(!$('app').classList.contains('hidden')) renderOverview(ALL.filter(b=>b.status==='booked'&&b.appt_date<TODAY).length); },200); });
+boot();
+</script>
+</body>
+</html>
