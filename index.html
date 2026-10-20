@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <style>
 :root{
@@ -687,10 +686,6 @@ const CFG = {
   paystackKey:     'pk_live_8e6bf3ba950e331eca62d376391bfcce429e2c7b', // Your Paystack public key
   waNumber:        '233555326284',
   lashTechs:       ['Tech 1'],   // ← lash techs' names. With one name the choice is hidden; add a second name to show it.
-  emailjsPublic:   '2-u9gqaRQwwwYchE9',
-  emailjsService:  'service_2y5xhmy',
-  emailjsOwnerTpl: 'template_c592nyl',   // Email to you when someone books
-  emailjsClientTpl:'template_7ofjrno',  // Confirmation email to client
   ownerEmail:      'lushnluxestudio@gmail.com',
   // Supabase (client records + owner dashboard). Leave blank to switch off.
   supabaseUrl:     'https://gdrqtivlonlrkjebhywz.supabase.co',
@@ -715,15 +710,17 @@ function loadTaken(dateVal){
     if(document.getElementById('bDate').value===dateVal) renderSlots();
   }).catch(()=>{});
 }
+// Saves the booking, then asks the studio's server to check the deposit with Paystack
+// and send the confirmation emails (owner + client) from bookings@lushnluxestudio.com.
 function saveBookingToDb(b){
-  if(!SB_ON) return;
-  sbFetch('bookings', b).then(r=>{
+  if(!SB_ON) return Promise.resolve();
+  return sbFetch('bookings', b).then(r=>{
       if(!r.ok){ r.text().then(t=>console.warn('Supabase:',t)); return; }
-      if(b.pay_ref && b.deposit) verifyDeposit(b.ref);
+      return verifyDeposit(b.ref);
     }).catch(e=>console.warn('Supabase:',e));
 }
 function verifyDeposit(ref){
-  fetch(CFG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/verify-payment',{
+  return fetch(CFG.supabaseUrl.replace(/\/$/,'')+'/functions/v1/verify-payment',{
     method:'POST', keepalive:true,
     headers:Object.assign({'apikey':CFG.supabaseAnonKey,'Content-Type':'application/json'},
       CFG.supabaseAnonKey.startsWith('eyJ') ? {'Authorization':'Bearer '+CFG.supabaseAnonKey} : {}),
@@ -731,8 +728,6 @@ function verifyDeposit(ref){
   }).catch(()=>{});
 }
 
-// Init EmailJS
-if (typeof emailjs !== 'undefined') emailjs.init(CFG.emailjsPublic);
 
 // ══ BOOKING SLOTS ══
 const BK_KEY = 'lnl_bk_v2';
@@ -899,7 +894,7 @@ function onPaymentDone(payRef, name, phone, email, svc, dateStr, time, notes, da
   (remoteTaken[dateVal] = remoteTaken[dateVal]||[]).push(calKey(svc, tech)+'|'+time);
 
   // Save to the studio's client records (owner dashboard)
-  saveBookingToDb({
+  const saved = saveBookingToDb({
     ref: bookRef, pay_ref: payRef || null,
     client_name: name, phone: phone, email: email,
     service: svc, service_price: extra.svcPrice||0,
@@ -933,7 +928,6 @@ function onPaymentDone(payRef, name, phone, email, svc, dateStr, time, notes, da
     `📱 Phone: ${phone}\n`+
     `📧 Email: ${email}\n`+
     `💅 Service: ${svc}\n`+
-    `👩🏾‍🎨 Lash Tech: ${tech}\n`+
     `📅 Date: ${dateStr}\n`+
     `⏰ Time: ${time}\n`+
     `💳 Payment Ref: ${payRef||'—'}\n`+
@@ -942,40 +936,17 @@ function onPaymentDone(payRef, name, phone, email, svc, dateStr, time, notes, da
   const waUrl = `https://wa.me/${CFG.waNumber}?text=${waMsg}`;
   const waBtn = document.getElementById('bkWaBtn'); if(waBtn) waBtn.href = waUrl;
 
-  // Email to owner
-  const e1 = sendEmail(CFG.emailjsOwnerTpl,{
-    to_email: 'lushnluxestudio@gmail.com',
-    to_name:  'Studio Owner',
-    client_name: name, client_phone: phone, client_email: email,
-    service: svc + coloredLashNote, date: dateStr, time, notes: notes||'None', lash_tech: tech,
-    booking_ref: bookRef, payment_ref: payRef||'—',
-  });
-
-  // Email to client
-  const e2 = sendEmail(CFG.emailjsClientTpl,{
-    to_email: email,
-    to_name:  name,
-    service: svc + coloredLashNote, date: dateStr, time, lash_tech: tech,
-    booking_ref: bookRef,
-    studio_name: 'Lush & Luxe Studio',
-    studio_phone: '+233 555 326 284',
-  });
-
   // Show success
   document.getElementById('bkForm').style.display='none';
   document.getElementById('bkSuccess').style.display='block';
   showToast('✓ Booking confirmed!');
 
-  // Open WhatsApp only AFTER the emails have gone (switching apps pauses the page on phones)
-  Promise.race([Promise.all([e1,e2]), new Promise(r=>setTimeout(r,5000))]).then(()=>{
+  // Open WhatsApp only after the booking is saved and the emails are sent (switching apps pauses the page on phones)
+  Promise.race([saved, new Promise(r=>setTimeout(r,6000))]).then(()=>{
     setTimeout(()=>{ try{ window.open(waUrl,'_blank'); }catch(e){} }, 300);  // if the browser blocks it, the WhatsApp button on screen does the job
   });
 }
 
-function sendEmail(tpl, params){
-  if(typeof emailjs==='undefined') return Promise.resolve();
-  return emailjs.send(CFG.emailjsService, tpl, params).catch(e=>console.warn('EmailJS:',e));
-}
 
 // ══ SLIDER ══
 let cur=0; const total=5;
