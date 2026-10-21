@@ -373,6 +373,18 @@ button{cursor:pointer;background:none;border:0}
   #book .bk3-main{grid-row:2;border:0;border-radius:0;background:var(--taupe);backdrop-filter:none;-webkit-backdrop-filter:none;padding:40px var(--gut) 60px}
 }
 
+
+/* ── several services per visit ── */
+#book .basket{margin-top:26px;border:1px solid rgba(245,240,231,.22);border-radius:2px;padding:16px 18px}
+#book .basket-h{font-family:var(--caps);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(245,240,231,.6);margin-bottom:6px}
+#book .basket ul{list-style:none;margin:0;padding:0}
+#book .basket li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(245,240,231,.12)}
+#book .basket li span{flex:1;font-family:var(--serif);font-size:20px;color:var(--ivory)}
+#book .basket li b{font-weight:400;font-size:14px;color:rgba(245,240,231,.8);font-variant-numeric:tabular-nums}
+#book .basket li button{width:28px;height:28px;border-radius:50%;border:1px solid rgba(245,240,231,.3);color:var(--ivory);font-size:16px;line-height:1;display:grid;place-items:center}
+#book .basket li button:hover{background:rgba(245,240,231,.12)}
+#book .basket-more{margin-top:10px;font-size:12.5px;color:rgba(245,240,231,.6)}
+
 /* ── POLICIES & FAQ ── */
 .pols{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(24px,3vw,44px);margin-top:60px;text-align:left}
 .pol h3{font-family:var(--caps);font-weight:400;font-size:11px;letter-spacing:.3em;text-transform:uppercase;margin-bottom:12px;color:var(--taupe)}
@@ -581,6 +593,11 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
             <button type="button" class="cat" data-cat="wax"><span>Waxing</span><small>Brow · Lip · Face</small></button>
           </div>
           <div class="fg svc-pick" id="svcPick" hidden><label for="svcSelect" id="svcPickLbl">Choose your service</label><select id="svcSelect"></select></div>
+          <div class="basket" id="basketBox" hidden>
+            <div class="basket-h">Your services</div>
+            <ul id="basketList"></ul>
+            <div class="basket-more">Add another service from Lashes, Brows or Waxing above.</div>
+          </div>
           <div class="fg" id="addonSection" style="display:none;margin-top:30px">
             <label>Add to your set <span class="opt">optional</span></label>
             <div class="addon-check-wrap">
@@ -720,11 +737,11 @@ function loadTaken(dateVal){
 }
 // Saves the booking, then asks the studio's server to check the deposit with Paystack
 // and send the confirmation emails (owner + client) from bookings@lushnluxestudio.com.
-function saveBookingToDb(b){
+function saveBookingToDb(rows, ref){
   if(!SB_ON) return Promise.resolve();
-  return sbFetch('bookings', b).then(r=>{
+  return sbFetch('bookings', rows).then(r=>{
       if(!r.ok){ r.text().then(t=>console.warn('Supabase:',t)); return; }
-      return verifyDeposit(b.ref);
+      return verifyDeposit(ref);
     }).catch(e=>console.warn('Supabase:',e));
 }
 function verifyDeposit(ref){
@@ -753,7 +770,23 @@ const calKey = (svc, tech) => isWax(svc) ? 'WAX' : isBrow(svc) ? 'BROW' : (tech|
 // How many clients can book the same time: lashes take 2 per time (two lash techs),
 // except Sundays and Mondays when one tech is off. Brows and waxing take 1.
 const capacity = (svc, day) => (isWax(svc) || isBrow(svc)) ? 1 : ((day===0 || day===1) ? 1 : 2);
-let selTime = null;
+let selTime = null;   // kept for older code paths
+// Several services can be booked for one visit (same day, one deposit)
+let basket = [];      // [{v:'Name|price', name, price, kind:'lash'|'brow'|'wax'}]
+let times  = {lash:null, brow:null};
+const kindOfSvc = v => isWax(v) ? 'wax' : isBrow(v) ? 'brow' : 'lash';
+const LASH_SETS = ['Classic','Hybrid','Wispy','Volume','Wet','Doll','Anime','Elle','Custom'];
+const isLashSet = name => LASH_SETS.some(x => name.includes(x));
+function basketAdd(v){
+  const [name, pr] = v.split('|'), kind = kindOfSvc(v);
+  if(kind==='wax'){ if(basket.some(b=>b.v===v)) return; }
+  else basket = basket.filter(b=>b.kind!==kind);          // one lash service and one brow service per visit
+  basket.push({v, name, price:parseInt(pr)||0, kind});
+  const order={lash:0,brow:1,wax:2}; basket.sort((x,y)=>order[x.kind]-order[y.kind]);
+}
+function basketRemove(v){ basket = basket.filter(b=>b.v!==v); }
+const hasKind = k => basket.some(b=>b.kind===k);
+function timesReady(){ return (!hasKind('lash')||times.lash) && (!hasKind('brow')||times.brow); }
 let selTech = null;
 function renderTechs(){
   const g=document.getElementById('techGrid'); if(!g) return;
@@ -776,16 +809,13 @@ function storeExtBooking(data){
 function toMins(str){ const[t,p]=str.split(' '); let[h,m]=t.split(':').map(Number); if(p==='PM'&&h!==12)h+=12; if(p==='AM'&&h===12)h=0; return h*60+m; }
 
 function updateSlots(){
-  const svc     = document.getElementById('bSvc').value;
-  // Show addon section when a main set is selected
+  // Add-ons only make sense with a full lash set
   const addonSec = document.getElementById('addonSection');
   if(addonSec){
-    const mainSets = ['Classic','Hybrid','Wispy','Volume','Wet','Doll','Anime','Elle','Custom'];
-    const isMainSet = mainSets.some(s => svc.includes(s));
-    addonSec.style.display = isMainSet ? 'block' : 'none';
-    if(!isMainSet){
-      if(document.getElementById('coloredLash')) document.getElementById('coloredLash').checked = false;
-      if(document.getElementById('buttonAddon')) document.getElementById('buttonAddon').checked = false;
+    const show = basket.some(b=>b.kind==='lash' && isLashSet(b.name));
+    addonSec.style.display = show ? 'block' : 'none';
+    if(!show){
+      ['coloredLash','buttonAddon'].forEach(id=>{ const c=document.getElementById(id); if(c) c.checked=false; });
       document.querySelectorAll('.addon-check-label').forEach(l=>l.classList.remove('selected'));
     }
   }
@@ -794,47 +824,47 @@ function updateSlots(){
 }
 
 function renderSlots(){
-  const svc     = document.getElementById('bSvc').value;
   const dateVal = document.getElementById('bDate').value;
   const sec     = document.getElementById('slotSec');
   const grid    = document.getElementById('slotGrid');
-  selTime = null;
-  if(!dateVal||!svc||!selTech){ sec.style.display='none'; return; }
-  const d   = new Date(dateVal+'T00:00:00');
-  const day = d.getDay();
-  if(isWax(svc) && day===1){ sec.style.display='block'; grid.innerHTML='<div style="color:rgba(245,240,231,0.6);font-size:.85rem;padding:.5rem 0">Waxing isn\'t available on Mondays. Please choose another day.</div>'; return; }
-  // Waxing takes about 15 minutes: no appointment time, the client comes in any time that day
-  if(isWax(svc)){
-    selTime = 'Any time';
-    sec.style.display='block';
-    grid.innerHTML='<div style="grid-column:1/-1;color:rgba(245,240,231,0.75);font-size:.9rem;line-height:1.7;padding:.25rem 0">Walk in any time, '+(day===0?'2pm – 7pm':'9am – 7pm')+'</div>';
-    return;
-  }
-  const wax    = false, brow = isBrow(svc);
-  const slots  = wax ? (day===0 ? WAX_SUN_SLOTS : WAX_WKDAY_SLOTS) : brow ? (day===0 ? BROW_SUN_SLOTS : BROW_WKDAY_SLOTS) : (day===0 ? SUN_SLOTS : WKDAY_SLOTS);
-  // Count bookings per time (the studio's records; this device's own list only when records are off)
-  const all    = SB_ON ? (remoteTaken[dateVal]||[]) : (getBookings()[dateVal]||[]);
-  const key    = calKey(svc, selTech), cap = capacity(svc, day);
-  const count  = t => all.filter(k => k===key+'|'+t || (!wax && !brow && (k==='*|'+t || k===t || /^(?!BROW|WAX)[^|]+\|/.test(k) && k.endsWith('|'+t)))).length;
-  const booked = slots.filter(t => count(t) >= cap);
-  const now    = new Date();
-  const isToday= dateVal===now.toISOString().split('T')[0];
-  const nowMin = now.getHours()*60+now.getMinutes();
+  if(!dateVal||!basket.length){ sec.style.display='none'; times={lash:null,brow:null}; return; }
+  const day = new Date(dateVal+'T00:00:00').getDay();
+  const now = new Date(), isToday = dateVal===now.toISOString().split('T')[0], nowMin = now.getHours()*60+now.getMinutes();
+  const all = SB_ON ? (remoteTaken[dateVal]||[]) : (getBookings()[dateVal]||[]);
   sec.style.display='block';
-  grid.innerHTML = slots.map(t=>{
-    const past   = isToday && toMins(t)<=nowMin;
-    const taken  = booked.includes(t);
-    let cls='tslot'; let lbl=t;
-    if(past){cls+=' past'; lbl+=' (past)';}
-    else if(taken){cls+=' taken'; lbl+=' (booked)';}
-    return `<div class="${cls}" onclick="pickSlot(this,'${t}')">${lbl}</div>`;
-  }).join('');
+  let html='';
+  const head = t => `<div class="slot-sub" style="grid-column:1/-1;flex-basis:100%;width:100%;margin:14px 0 2px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,240,231,.6)">${t}</div>`;
+  ['lash','brow'].forEach(kind=>{
+    const item = basket.find(b=>b.kind===kind); if(!item){ times[kind]=null; return; }
+    const slots = kind==='brow' ? (day===0 ? BROW_SUN_SLOTS : BROW_WKDAY_SLOTS) : (day===0 ? SUN_SLOTS : WKDAY_SLOTS);
+    const key = calKey(item.v, selTech), cap = capacity(item.v, day);
+    const count = t => all.filter(k => k===key+'|'+t || (kind==='lash' && (k==='*|'+t || k===t || (/^(?!BROW|WAX)[^|]+\|/.test(k) && k.endsWith('|'+t))))).length;
+    if(times[kind] && (count(times[kind])>=cap || !slots.includes(times[kind]))) times[kind]=null;
+    if(hasKind('lash') + hasKind('brow') > 1 || hasKind('wax')) html += head(item.name);
+    html += slots.map(t=>{
+      const past = isToday && toMins(t)<=nowMin, taken = count(t)>=cap;
+      let cls='tslot', lbl=t;
+      if(past){cls+=' past'; lbl+=' (past)'; if(times[kind]===t) times[kind]=null;}
+      else if(taken){cls+=' taken'; lbl+=' (booked)';}
+      if(times[kind]===t) cls+=' sel';
+      return `<div class="${cls}" data-kind="${kind}" onclick="pickSlot(this,'${kind}','${t}')">${lbl}</div>`;
+    }).join('');
+  });
+  if(hasKind('wax')){
+    const w = basket.filter(b=>b.kind==='wax').map(b=>b.name).join(', ');
+    html += day===1
+      ? `<div style="grid-column:1/-1;flex-basis:100%;width:100%;color:rgba(245,240,231,0.75);font-size:.9rem;padding:.5rem 0">Waxing isn't available on Mondays. Please choose another day.</div>`
+      : (hasKind('lash')||hasKind('brow') ? head(w) : '') + `<div style="grid-column:1/-1;flex-basis:100%;width:100%;color:rgba(245,240,231,0.75);font-size:.9rem;line-height:1.7;padding:.25rem 0">Walk in any time, ${day===0?'2pm – 7pm':'9am – 7pm'}</div>`;
+  }
+  grid.innerHTML = html;
+  selTime = times.lash || times.brow || (hasKind('wax') ? 'Any time' : null);
 }
 
-function pickSlot(el,time){
+function pickSlot(el,kind,time){
   if(el.classList.contains('taken')||el.classList.contains('past')) return;
-  document.querySelectorAll('.tslot').forEach(s=>s.classList.remove('sel'));
-  el.classList.add('sel'); selTime=time;
+  document.querySelectorAll(`.tslot[data-kind="${kind}"]`).forEach(s=>s.classList.remove('sel'));
+  el.classList.add('sel'); times[kind]=time;
+  selTime = times.lash || times.brow || 'Any time';
 }
 
 // Set min date
@@ -849,123 +879,103 @@ function submitBooking(){
   const name  = document.getElementById('bName').value.trim();
   const phone = document.getElementById('bPhone').value.trim();
   const email = document.getElementById('bEmail').value.trim();
-  const svcRaw= document.getElementById('bSvc').value;
   const date  = document.getElementById('bDate').value;
   const notes = document.getElementById('bNotes').value.trim();
   const coloredLash = document.getElementById('coloredLash')?.checked || false;
   const buttonAddon = document.getElementById('buttonAddon')?.checked || false;
-  let addonsArr = [];
-  if(coloredLash) addonsArr.push('Colored Lashes (+₵40)');
-  if(buttonAddon) addonsArr.push('Bottoms (+₵100)');
-  const coloredLashNote = addonsArr.length > 0 ? ' + ' + addonsArr.join(' + ') : '';
   const agreed= document.getElementById('pAgree').checked;
 
   if(!name)   { showToast('⚠ Enter your first name'); return; }
   if(!phone)  { showToast('⚠ Enter your phone number'); return; }
   if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showToast('⚠ Enter a valid email address'); return; }
-  if(!svcRaw) { showToast('⚠ Select a service'); return; }
-  if(!selTech){ showToast('⚠ Choose your lash tech'); return; }
+  if(!basket.length) { showToast('⚠ Select a service'); return; }
   if(!date)   { showToast('⚠ Choose a date'); return; }
   const dd = new Date(date+'T00:00:00');
-  if(isWax(svcRaw) && dd.getDay()===1){ showToast('⚠ Waxing isn\'t available on Mondays'); return; }
-  if(!selTime){ showToast('⚠ Select a time slot'); return; }
+  if(hasKind('wax') && dd.getDay()===1){ showToast('⚠ Waxing isn\'t available on Mondays'); return; }
+  if(!timesReady()){ showToast('⚠ Select a time slot'); return; }
   if(!agreed) { showToast('⚠ Please agree to the studio policies'); return; }
 
-  const [svcName, svcPriceStr] = svcRaw.split('|');
-  const svcPrice = parseInt(svcPriceStr)||0;
-  const deposit  = svcPrice > 0 ? Math.ceil(svcPrice * 0.5) : 0;
-  const dateStr  = dd.toLocaleDateString('en-GH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const ref      = 'LNL-'+Date.now().toString().slice(-6);
-  const addonsTotal = (coloredLash?40:0) + (buttonAddon?100:0);
-  const extra = {tech: selTech, addonNote: coloredLashNote, addons: addonsArr.map(a=>a.replace(/ \(\+₵\d+\)/,'')),
-                 svcPrice, addonsTotal, deposit};
+  const base = 'LNL-'+Date.now().toString().slice(-6);
+  const items = basket.map((b,n)=>{
+    const addons = [];
+    if(b.kind==='lash' && isLashSet(b.name)){ if(coloredLash) addons.push(['Colored Lashes',40]); if(buttonAddon) addons.push(['Bottoms',100]); }
+    const addonsTotal = addons.reduce((t,a)=>t+a[1],0);
+    return { ref: basket.length>1 ? base+'-'+(n+1) : base, name:b.name, v:b.v, kind:b.kind, price:b.price,
+             addons: addons.map(a=>a[0]), addonsTotal, deposit: b.price>0 ? Math.ceil(b.price*0.5) : 0,
+             time: b.kind==='wax' ? 'Any time' : times[b.kind] };
+  });
+  items[0].ref = base;                                         // the visit is known by its first reference
+  const deposit = items.reduce((t,i)=>t+i.deposit,0);
+  const dateStr = dd.toLocaleDateString('en-GH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  const visit = {base, name, phone, email, notes, date, dateStr, items, deposit};
 
   if(deposit > 0){
-    // Pay deposit via Paystack
     const handler = PaystackPop.setup({
       key:      CFG.paystackKey,
       email:    email,
       amount:   deposit * 100,
       currency: 'GHS',
-      ref:      ref,
+      ref:      base,
       bearer:   'account',
       channels: ['card','mobile_money'],
       metadata: { custom_fields:[
         {display_name:'Client',variable_name:'client',value:name},
-        {display_name:'Service',variable_name:'service',value:svcName},
+        {display_name:'Services',variable_name:'service',value:items.map(i=>i.name).join(' + ')},
         {display_name:'Date',variable_name:'date',value:dateStr},
-        {display_name:'Time',variable_name:'time',value:selTime},
-        {display_name:'Lash Tech',variable_name:'lash_tech',value:selTech},
+        {display_name:'Times',variable_name:'time',value:items.map(i=>i.name+' '+i.time).join(', ')},
       ]},
-      callback(res){ onPaymentDone(res.reference, name, phone, email, svcName, dateStr, selTime, notes, date, ref, extra); },
+      callback(res){ onPaymentDone(res.reference, visit); },
       onClose(){ showToast('Payment cancelled — booking not confirmed'); }
     });
     handler.openIframe();
   } else {
-    // Free / custom-priced service (brow services, refill etc)
-    onPaymentDone(deposit>0?ref:'', name, phone, email, svcName, dateStr, selTime, notes, date, ref, extra);
+    onPaymentDone('', visit);   // e.g. a refill on its own, priced at the visit
   }
 }
 
-function onPaymentDone(payRef, name, phone, email, svc, dateStr, time, notes, dateVal, bookRef, extra){
-  extra = extra || {};
-  const coloredLashNote = extra.addonNote || '';
-  const deposit = extra.deposit || 0;
-  const tech = extra.tech || '';
-  storeBooking(dateVal, calKey(svc, tech)+'|'+time);
-  (remoteTaken[dateVal] = remoteTaken[dateVal]||[]).push(calKey(svc, tech)+'|'+time);
-
-  // Save to the studio's client records (owner dashboard)
-  const saved = saveBookingToDb({
-    ref: bookRef, pay_ref: payRef || null,
-    client_name: name, phone: phone, email: email,
-    service: svc, service_price: extra.svcPrice||0,
-    addons: extra.addons||[], addons_total: extra.addonsTotal||0,
-    total: (extra.svcPrice||0) + (extra.addonsTotal||0),
-    deposit: deposit, appt_date: dateVal, appt_time: time, tech: tech || null,
-    notes: notes || null
+function onPaymentDone(payRef, v){
+  const tech = selTech || '';
+  v.items.forEach(i=>{
+    const k = calKey(i.v, tech)+'|'+i.time;
+    storeBooking(v.date, k); (remoteTaken[v.date] = remoteTaken[v.date]||[]).push(k);
   });
 
-  // Save extended booking data for admin dashboard
-  storeExtBooking({
-    name: name,
-    phone: phone,
-    email: email,
-    service: svc,
-    addons: coloredLashNote || 'None',
-    date: dateStr,
-    time: time,
-    deposit: deposit,
-    ref: bookRef,
-    notes: notes,
-    payRef: payRef,
-    timestamp: new Date().toISOString(),
-  });
+  // Save to the studio's records: one row per service, all sharing the visit reference
+  const rows = v.items.map(i=>({
+    ref: i.ref, group_ref: v.items.length>1 ? v.base : null, pay_ref: payRef || null,
+    client_name: v.name, phone: v.phone, email: v.email,
+    service: i.name, service_price: i.price, addons: i.addons, addons_total: i.addonsTotal,
+    total: i.price + i.addonsTotal, deposit: i.deposit,
+    appt_date: v.date, appt_time: i.time, tech: i.kind==='lash' ? (tech||null) : null,
+    notes: v.notes || null
+  }));
+  const saved = saveBookingToDb(rows, v.base);
+
+  storeExtBooking({ name:v.name, phone:v.phone, email:v.email, service:v.items.map(i=>i.name).join(' + '),
+    date:v.dateStr, time:v.items.map(i=>i.time).join(', '), deposit:v.deposit, ref:v.base, notes:v.notes, payRef, timestamp:new Date().toISOString() });
 
   // WhatsApp to owner
+  const lines = v.items.map(i=>`💅 ${i.name}${i.addons.length?' + '+i.addons.join(' + '):''} · ${i.time}`).join('\n');
   const waMsg = encodeURIComponent(
     `🌸 *NEW BOOKING — Lush & Luxe Studio*\n\n`+
-    `📋 Ref: ${bookRef}\n`+
-    `👤 Client: ${name}\n`+
-    `📱 Phone: ${phone}\n`+
-    `📧 Email: ${email}\n`+
-    `💅 Service: ${svc}\n`+
-    `📅 Date: ${dateStr}\n`+
-    `⏰ Time: ${time}\n`+
-    `💳 Payment Ref: ${payRef||'—'}\n`+
-    (notes?`📝 Notes: ${notes}`:'')
+    `📋 Ref: ${v.base}\n`+
+    `👤 Client: ${v.name}\n`+
+    `📱 Phone: ${v.phone}\n`+
+    `📧 Email: ${v.email}\n`+
+    `${lines}\n`+
+    `📅 Date: ${v.dateStr}\n`+
+    `💳 Deposit: ${v.deposit?'₵'+v.deposit:'None'}${payRef?' (ref '+payRef+')':''}\n`+
+    (v.notes?`📝 Notes: ${v.notes}`:'')
   );
   const waUrl = `https://wa.me/${CFG.waNumber}?text=${waMsg}`;
   const waBtn = document.getElementById('bkWaBtn'); if(waBtn) waBtn.href = waUrl;
 
-  // Show success
   document.getElementById('bkForm').style.display='none';
   document.getElementById('bkSuccess').style.display='block';
   showToast('✓ Booking confirmed!');
 
-  // Open WhatsApp only after the booking is saved and the emails are sent (switching apps pauses the page on phones)
   Promise.race([saved, new Promise(r=>setTimeout(r,6000))]).then(()=>{
-    setTimeout(()=>{ try{ window.open(waUrl,'_blank'); }catch(e){} }, 300);  // if the browser blocks it, the WhatsApp button on screen does the job
+    setTimeout(()=>{ try{ window.open(waUrl,'_blank'); }catch(e){} }, 300);
   });
 }
 
@@ -1047,22 +1057,32 @@ document.querySelectorAll('.fi').forEach(el=>obs.observe(el));
     document.querySelectorAll('#catChoice .cat').forEach(x=>x.classList.toggle('sel',x===c));
     const cat=c.dataset.cat, brow=cat==='brow', wax=cat==='wax', NON_LASH=['Brows','Waxing'];
     const groups=[...sel.querySelectorAll('optgroup')].filter(g=>brow ? g.label==='Brows' : wax ? g.label==='Waxing' : !NON_LASH.includes(g.label));
-    renderDays(wax);
     pickSel.innerHTML='<option value="">Select a '+(brow?'brow':wax?'waxing':'lash')+' service</option>'+groups.map(g=>`<optgroup label="${g.label==='Add-Ons'?'Refills & extras':g.label}">`+
       [...g.querySelectorAll('option')].map(o=>{ const [n,pr]=o.value.split('|'); return `<option value="${o.value.replace(/"/g,'&quot;')}">${n} — ${+pr?'₵'+pr:'50% of set'}</option>`; }).join('')+'</optgroup>').join('');
     document.getElementById('svcPickLbl').textContent = brow ? 'Choose your brow service' : wax ? 'Choose your waxing service' : 'Choose your lash service';
-    pick.hidden=false; sel.value=''; updateSlots(); showSel();
+    pick.hidden=false;
   });
   function showSel(){
-    const v=sel.value, live=document.getElementById('selLive'), def=document.getElementById('selDefault');
-    if(!v){ live.hidden=true; def.hidden=false; return; }
-    const [n,pr]=v.split('|'), wax=/\bWax\b/.test(n), brow=!wax && /Brow/.test(n);
-    document.getElementById('selKicker').textContent = wax ? 'Waxing · your selection' : brow ? 'Brows · your selection' : 'Lashes · your selection';
-    document.getElementById('selName').textContent=n;
-    document.getElementById('selMeta').textContent = +pr ? '₵'+pr+' · ₵'+Math.ceil(pr/2)+' deposit' : 'Priced at 50% of your set';
+    const live=document.getElementById('selLive'), def=document.getElementById('selDefault');
+    if(!basket.length){ live.hidden=true; def.hidden=false; return; }
+    const kinds=[...new Set(basket.map(b=>b.kind))].map(k=>({lash:'Lashes',brow:'Brows',wax:'Waxing'})[k]);
+    const priced=basket.reduce((t,b)=>t+b.price,0), dep=basket.reduce((t,b)=>t+(b.price?Math.ceil(b.price/2):0),0);
+    document.getElementById('selKicker').textContent = kinds.join(' · ')+' · your selection';
+    document.getElementById('selName').textContent = basket.length===1 ? basket[0].name : basket[0].name+' + '+(basket.length-1)+' more';
+    document.getElementById('selMeta').textContent = dep ? '₵'+priced+' · ₵'+dep+' deposit' : 'Priced at the visit';
     def.hidden=true; live.hidden=false; live.style.animation='none'; live.offsetHeight; live.style.animation='';
   }
-  pickSel.addEventListener('change',()=>{ sel.value=pickSel.value; updateSlots(); showSel(); });
+  function renderBasket(){
+    const box=document.getElementById('basketBox'), ul=document.getElementById('basketList');
+    box.hidden=!basket.length;
+    ul.innerHTML=basket.map(b=>`<li><span>${b.name}</span><b>${b.price?'₵'+b.price:'50% of set'}</b><button type="button" aria-label="Remove ${b.name}" data-v="${b.v.replace(/"/g,'&quot;')}">×</button></li>`).join('');
+  }
+  document.getElementById('basketList').addEventListener('click',e=>{
+    const x=e.target.closest('button[data-v]'); if(!x) return;
+    basketRemove(x.dataset.v); afterBasket();
+  });
+  function afterBasket(){ renderBasket(); renderDays(hasKind('wax')); updateSlots(); showSel(); }
+  pickSel.addEventListener('change',()=>{ if(!pickSel.value) return; basketAdd(pickSel.value); pickSel.value=''; afterBasket(); });
   // next 21 days
   const daysEl=document.getElementById('days'), dIn=document.getElementById('bDate');
   const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1080,19 +1100,21 @@ document.querySelectorAll('.fi').forEach(el=>obs.observe(el));
   daysEl.addEventListener('click',e=>{ const b=e.target.closest('.day'); if(!b||b.disabled) return;
     daysEl.querySelectorAll('.day').forEach(x=>x.classList.toggle('sel',x===b)); dIn.value=b.dataset.d; updateSlots(); });
   window.goStep=function(n){
-    if(n>=2 && !sel.value){ showToast('Choose a service first'); return; }
-    if(n>=3){ if(!dIn.value){ showToast('Choose a day'); return; } if(typeof selTime==='undefined'||!selTime){ showToast('Choose a time'); return; } }
+    if(n>=2 && !basket.length){ showToast('Choose a service first'); return; }
+    if(n>=3){ if(!dIn.value){ showToast('Choose a day'); return; } if(!timesReady()){ showToast(hasKind('lash')&&hasKind('brow')?'Choose a time for each service':'Choose a time'); return; } }
     if(n===2){
-      const wax=/\bWax\b/i.test(sel.value.split('|')[0]), brow=!wax && /^Brow/i.test(sel.value);
-      document.getElementById('timeLbl').textContent = wax ? 'Time' : brow ? 'Choose a time · brow appointments' : 'Choose a time · lash appointments';
-      document.getElementById('timeHint').textContent = wax ? '' : brow ? 'Brow times: 11:00 AM, 1:00 PM, 3:00 PM, 5:00 PM. Booked and past times are unavailable.' : 'Booked and past times are unavailable.';
+      const onlyWax=basket.every(b=>b.kind==='wax'), both=hasKind('lash')&&hasKind('brow');
+      document.getElementById('timeLbl').textContent = onlyWax ? 'Time' : both ? 'Choose a time for each service' : 'Choose a time';
+      document.getElementById('timeHint').textContent = onlyWax ? '' : 'Booked and past times are unavailable.';
       if(!dIn.value){ const first=daysEl.querySelector('.day:not([disabled])'); if(first) first.click(); } else updateSlots();
     }
     document.querySelectorAll('.step').forEach(s=>s.classList.toggle('on',+s.dataset.step===n));
     document.querySelectorAll('#steps li').forEach((li,i)=>{ li.classList.toggle('on',i===n-1); li.classList.toggle('done',i<n-1); });
-    if(n===3){ const [nm,pr]=sel.value.split('|'), d=new Date(dIn.value+'T00:00:00');
+    if(n===3){ const d=new Date(dIn.value+'T00:00:00');
       const extras=[document.getElementById('coloredLash').checked?'Coloured lashes':'',document.getElementById('buttonAddon').checked?'Bottoms':''].filter(Boolean).join(', ');
-      document.getElementById('summary').innerHTML=`<div><small>Service</small>${nm}${extras?' + '+extras:''}</div><div><small>Date</small>${DN[d.getDay()]} ${d.getDate()} ${MN[d.getMonth()]}</div><div><small>Time</small>${selTime}</div><div><small>Deposit</small>${+pr?'₵'+Math.ceil(pr/2):'None'}</div>`; }
+      const dep=basket.reduce((t,b)=>t+(b.price?Math.ceil(b.price/2):0),0);
+      const svc=basket.map(b=>`${b.name}${b.kind==='lash'&&extras&&isLashSet(b.name)?' + '+extras:''} · ${b.kind==='wax'?'Any time':times[b.kind]}`).join('<br>');
+      document.getElementById('summary').innerHTML=`<div style="flex-basis:100%"><small>${basket.length>1?'Services':'Service'}</small>${svc}</div><div><small>Date</small>${DN[d.getDay()]} ${d.getDate()} ${MN[d.getMonth()]}</div><div><small>Deposit</small>${dep?'₵'+dep:'None'}</div>`; }
     document.getElementById('book').scrollIntoView({behavior:'smooth',block:'start'});
   };
   // VIP list
