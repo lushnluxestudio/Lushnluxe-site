@@ -338,10 +338,11 @@ const SERVICES = [
   ['Classic Cat Eye / Wispy',250],['Hybrid Cat Eye',300],['Wispy',300],['Volume Cat Eye',350],['Volume Wispy',400],
   ['Wet Set',280],['Elle Set',300],['Anime Set',320],['Doll Eye Set',280],['Custom Set',400],
   ['Refill',0],['Lash Removal',100],['Bottoms',100],
-  ['Brow Shaping',30],['Brow Tint',150],['Brow Lamination',220],['Brow Lamination & Tint',350]
+  ['Brow Shaping',30],['Brow Tint',150],['Brow Lamination',220],['Brow Lamination & Tint',350],
+  ['Eyebrow Wax',100],['Upper Lip Wax',80],['Chin Wax',150],['Nose Wax',100],['Full Face Wax',350]
 ];
 const NON_SET = ['Lash Removal','Bottoms'];        // don't start the fill-in clock
-const isSetVisit = b => !NON_SET.includes(b.service) && !/^Brow/i.test(b.service||'');
+const isSetVisit = b => !NON_SET.includes(b.service) && !/^Brow/i.test(b.service||'') && !/\bWax\b/i.test(b.service||'');
 
 // ── helpers ──
 const $ = id => document.getElementById(id);
@@ -618,7 +619,7 @@ function renderOverview(tomark){
   const dayCount=[0,0,0,0,0,0,0]; const times={};
   S.comp.forEach(b=>{ dayCount[parseD(b.appt_date).getDay()]++; times[b.appt_time]=(times[b.appt_time]||0)+1; });
   const order=[1,2,3,4,5,6,0];
-  barChart($('dayChart'), order.map(i=>({label:DAYS[i], v:dayCount[i], closed:i===2})), d=> d.closed?'<b>Tuesday</b><br>Closed':`<b>${d.label}</b><br>${d.v} visit${d.v===1?'':'s'}`, false, 150);
+  barChart($('dayChart'), order.map(i=>({label:DAYS[i], v:dayCount[i], closed:false})), d=> `<b>${d.label}</b><br>${d.v} visit${d.v===1?'':'s'}`, false, 150);
   hbars($('timeBars'), Object.entries(times).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([t,n])=>({nm:t,n,txt:n+' visit'+(n===1?'':'s')})));
 
   // new vs returning visits
@@ -702,6 +703,9 @@ function resInfo(b){
 const WK_SLOTS=['9:00 AM','10:30 AM','12:00 PM','2:00 PM','3:30 PM','5:00 PM','6:30 PM'], SUN_SLOTS=['2:00 PM','3:30 PM','5:00 PM','6:30 PM'];
 const BROW_WK=['11:00 AM','1:00 PM','3:00 PM','5:00 PM'], BROW_SUN=['2:00 PM','4:00 PM'];
 const isBrowSvc = s => /^Brow/i.test(s||'');
+const isWaxSvc = s => /\bWax\b/i.test(s||'');
+const kindOf = s => isWaxSvc(s) ? 'wax' : isBrowSvc(s) ? 'brow' : 'lash';
+const capFor = (kind, day) => kind==='lash' ? ((day===0||day===1) ? 1 : 2) : 1;   // 2 lash clients per time, 1 on Sun/Mon
 let RB=null;
 function openResched(id){
   RB=ALL.find(x=>x.id===id); if(!RB) return;
@@ -713,17 +717,19 @@ function openResched(id){
 function reschedSlots(){
   const d=$('rDate').value; if(!d){ return; }
   const day=parseD(d).getDay();
-  if(day===2){ $('rTime').innerHTML='<option value="">Closed on Tuesdays</option>'; return; }
-  const tech=$('rTech').value;
-  const brow=isBrowSvc(RB.service);
-  const taken=ALL.filter(b=>b.appt_date===d && ['booked','completed'].includes(b.status) && isBrowSvc(b.service)===brow && (brow || !b.tech || b.tech===tech)).map(b=>b.appt_time);
-  $('rTime').innerHTML='<option value="">Choose a time</option>'+(brow?(day===0?BROW_SUN:BROW_WK):(day===0?SUN_SLOTS:WK_SLOTS)).map(t=>`<option ${taken.includes(t)?'disabled':''} value="${t}">${t}${taken.includes(t)?' (booked)':''}</option>`).join('');
+  const kind=kindOf(RB.service);
+  if(kind==='wax' && day===1){ $('rTime').innerHTML='<option value="">No waxing on Mondays</option>'; return; }
+  if(kind==='wax'){ $('rTime').innerHTML='<option value="Any time" selected>Any time (no slot needed)</option>'; return; }
+  const cap=capFor(kind, day);
+  const n=t=>ALL.filter(b=>b.appt_date===d && b.appt_time===t && b.id!==RB.id && ['booked','completed'].includes(b.status) && kindOf(b.service)===kind).length;
+  const slots = kind==='lash' ? (day===0?SUN_SLOTS:WK_SLOTS) : (day===0?BROW_SUN:BROW_WK);
+  $('rTime').innerHTML='<option value="">Choose a time</option>'+slots.map(t=>{ const full=n(t)>=cap; return `<option ${full?'disabled':''} value="${t}">${t}${full?' (full)':cap>1&&n(t)?' (1 space left)':''}</option>`; }).join('');
 }
 async function saveResched(){
   const b=RB, d=$('rDate').value, t=$('rTime').value, end=monthEnd(origDate(b));
   if(!d||!t){ toast('Pick a new date and time'); return; }
   if(d<TODAY||d>end){ toast('The new date must be between today and '+fmtDateY(end)); return; }
-  if(parseD(d).getDay()===2){ toast('Closed on Tuesdays'); return; }
+  if(isWaxSvc(b.service) && parseD(d).getDay()===1){ toast('No waxing on Mondays'); return; }
   const n=(b.reschedule_count||0)+1;
   const row={ ref:(b.ref||('LNL-'+Date.now().toString().slice(-6)))+'-R'+n, pay_ref:b.pay_ref, client_name:b.client_name, phone:b.phone, email:b.email,
     service:b.service, service_price:b.service_price, addons:b.addons||[], addons_total:b.addons_total||0, total:b.total, deposit:b.deposit,

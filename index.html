@@ -330,10 +330,10 @@ button{cursor:pointer;background:none;border:0}
 @media (max-width:900px){.bk3{grid-template-columns:1fr;min-height:0}.bk3-img{min-height:380px}}
 
 
-#book .cat-choice{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#book .cat-choice{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 #book .cat{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:30px 28px;border:1px solid rgba(245,240,231,.22);border-radius:2px;text-align:left;transition:all .35s var(--ease)}
 #book .cat span{font-family:var(--serif);font-weight:300;font-size:clamp(30px,3vw,40px);line-height:1;color:var(--ivory)}
-#book .cat small{font-family:var(--caps);font-size:9px;letter-spacing:.26em;text-transform:uppercase;color:rgba(245,240,231,.55)}
+#book .cat small{font-family:var(--caps);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(245,240,231,.55)}
 #book .cat:hover{border-color:rgba(245,240,231,.5)}
 #book .cat.sel{background:var(--ivory);border-color:var(--ivory)}
 #book .cat.sel span{color:var(--taupe);font-style:italic}
@@ -454,7 +454,7 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
   <img class="img" src="eye.webp" alt="Close-up of an eye with lash extensions"/>
   <div class="hero-txt">
     <h1 class="reveal">Lush <em>&amp;</em> Luxe</h1>
-    <p class="hero-sub reveal">Lash &amp; brow studio in Spintex, Accra</p>
+    <p class="hero-sub reveal">Lash, brow &amp; waxing studio</p>
     <a href="#book" class="btn btn-iv reveal">Book your set</a>
   </div>
   <div class="hero-band">
@@ -468,7 +468,7 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
 <section class="light sec center" id="about">
   <div class="wrap intro">
     <div class="cap reveal">Our story</div>
-    <h2 class="h2 reveal" style="margin-top:18px">A calm studio in <em>Spintex</em></h2>
+    <h2 class="h2 reveal" style="margin-top:18px">The Lush &amp; Luxe <em>way</em></h2>
         <p class="lead reveal">Lush &amp; Luxe Studio offers high-quality lash and brow services designed to enhance natural beauty with precision and care. Our team delivers clean, long-lasting results in a calm, welcoming environment. We pride ourselves on professionalism, hygiene and consistent client satisfaction.</p>
     <div class="pillars">
       <div class="pillar reveal"><h3>Bespoke design</h3><p>Every set is mapped to your eye shape and the look you want.</p></div>
@@ -498,8 +498,8 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
     <h2 class="h2 reveal" style="margin-top:18px">Our services</h2>
     <div class="svc-list">
       <div class="svc reveal"><h3>Lash Extensions</h3><p>Classic, hybrid, volume and specialty sets, custom-mapped to your eyes.</p></div>
-      <div class="svc reveal"><h3>Brow Lamination</h3><p>Brushed-up, fuller-looking brows that hold their shape.</p></div>
-      <div class="svc reveal"><h3>Brow Tint &amp; Lamination</h3><p>Lamination with tint for added depth and definition.</p></div>
+      <div class="svc reveal"><h3>Brow Lamination &amp; Tint</h3><p>Brushed-up, fuller-looking brows, with tint for added depth.</p></div>
+      <div class="svc reveal"><h3>Face Waxing</h3><p>Brows, upper lip, chin, nose or full face, for smooth, clean skin.</p></div>
       <div class="svc reveal"><h3>Brow Shaping</h3><p>Clean, balanced shaping to frame your face.</p></div>
       <div class="svc reveal"><h3>Lash Refills</h3><p>Top-ups every 2–3 weeks to keep your set full and fresh.</p></div>
       <div class="svc reveal"><h3>Lash Removal</h3><p>Gentle, safe removal that protects your natural lashes.</p></div>
@@ -528,7 +528,7 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
   <div class="bk3">
     <div class="bk3-img"><img class="img" src="studio.webp" alt="Client with soft wispy lash extensions"/></div>
     <div class="bk3-cap">
-      <div class="sel-default" id="selDefault"><div class="cap">Reservations</div><h2 class="h2">Reserve your<br/><em>appointment</em></h2><p>A 50% deposit secures your booking and goes towards your total. Closed on Tuesdays.</p></div>
+      <div class="sel-default" id="selDefault"><div class="cap">Reservations</div><h2 class="h2">Reserve your<br/><em>appointment</em></h2><p>A 50% deposit secures your booking and goes towards your total. Open seven days.</p></div>
       <div class="sel-live" id="selLive" hidden><div class="cap" id="selKicker">Your selection</div><div class="sel-name" id="selName"></div><div class="cap sel-meta" id="selMeta"></div></div>
     </div>
     <div class="bk3-main">
@@ -557,6 +557,13 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
               <option value="Brow Lamination|220">Brow Lamination — ₵220</option>
               <option value="Brow Lamination &amp; Tint|350">Brow Lamination &amp; Tint — ₵350</option>
             </optgroup>
+            <optgroup label="Waxing">
+              <option value="Eyebrow Wax|100">Eyebrow Wax — ₵100</option>
+              <option value="Upper Lip Wax|80">Upper Lip Wax — ₵80</option>
+              <option value="Chin Wax|150">Chin Wax — ₵150</option>
+              <option value="Nose Wax|100">Nose Wax — ₵100</option>
+              <option value="Full Face Wax|350">Full Face Wax — ₵350</option>
+            </optgroup>
             <optgroup label="Lash Removal">
               <option value="Lash Removal|100">Lash Removal — ₵100</option>
             </optgroup>
@@ -569,8 +576,9 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
         <!-- STEP 1 -->
         <div class="step on" data-step="1">
           <div class="cat-choice" id="catChoice">
-            <button type="button" class="cat" data-cat="lash"><span>Lashes</span><small>Sets · Refills · Removal</small></button>
-            <button type="button" class="cat" data-cat="brow"><span>Brows</span><small>Lamination · Tint · Shaping</small></button>
+            <button type="button" class="cat" data-cat="lash"><span>Lashes</span><small>Sets · Refills</small></button>
+            <button type="button" class="cat" data-cat="brow"><span>Brows</span><small>Shape · Tint</small></button>
+            <button type="button" class="cat" data-cat="wax"><span>Waxing</span><small>Brow · Lip · Face</small></button>
           </div>
           <div class="fg svc-pick" id="svcPick" hidden><label for="svcSelect" id="svcPickLbl">Choose your service</label><select id="svcSelect"></select></div>
           <div class="fg" id="addonSection" style="display:none;margin-top:30px">
@@ -671,7 +679,7 @@ footer .logo-f{height:120px;width:auto;margin:0 auto}
       <a href="https://wa.me/233555326284" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 21.8a9.8 9.8 0 01-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.8 9.8 0 1112 21.8zm0-21.6A11.8 11.8 0 001.9 18l-1.7 6 6.2-1.6A11.8 11.8 0 1012 .2z"/></svg></a>
       <a href="mailto:lushnluxestudio@gmail.com" aria-label="Email"><svg viewBox="0 0 24 24"><path d="M2 5h20v14H2zm2 2v.5l8 5 8-5V7zm16 2.9l-8 5-8-5V17h16z"/></svg></a>
     </div>
-    <div class="ft-bottom"><span>© <span id="yr">2026</span> Lush &amp; Luxe Studio · Spintex, Accra</span><span>Mon, Wed–Sat 9am–7pm · Sun 2pm–7pm · Closed Tuesdays</span></div>
+    <div class="ft-bottom"><span>© <span id="yr">2026</span> Lush &amp; Luxe Studio</span><span>Mon–Sat 9am–7pm · Sun 2pm–7pm</span></div>
   </div>
 </footer>
 
@@ -737,8 +745,14 @@ const SUN_SLOTS   = ['2:00 PM','3:30 PM','5:00 PM','6:30 PM'];          // Sunda
 // Brow appointments have their own times
 const BROW_WKDAY_SLOTS = ['11:00 AM','1:00 PM','3:00 PM','5:00 PM'];
 const BROW_SUN_SLOTS   = ['2:00 PM','4:00 PM'];          // brows every 2 hrs from Sunday opening
+// Waxing uses the brow times on its own calendar, and is not offered on Mondays
+const WAX_WKDAY_SLOTS = BROW_WKDAY_SLOTS, WAX_SUN_SLOTS = BROW_SUN_SLOTS;
 const isBrow = svc => /^Brow/i.test(String(svc||'').split('|')[0]);
-const calKey = (svc, tech) => isBrow(svc) ? 'BROW' : (tech||'*');
+const isWax  = svc => /\bWax\b/i.test(String(svc||'').split('|')[0]);
+const calKey = (svc, tech) => isWax(svc) ? 'WAX' : isBrow(svc) ? 'BROW' : (tech||'*');
+// How many clients can book the same time: lashes take 2 per time (two lash techs),
+// except Sundays and Mondays when one tech is off. Brows and waxing take 1.
+const capacity = (svc, day) => (isWax(svc) || isBrow(svc)) ? 1 : ((day===0 || day===1) ? 1 : 2);
 let selTime = null;
 let selTech = null;
 function renderTechs(){
@@ -788,12 +802,21 @@ function renderSlots(){
   if(!dateVal||!svc||!selTech){ sec.style.display='none'; return; }
   const d   = new Date(dateVal+'T00:00:00');
   const day = d.getDay();
-  if(day===2){ sec.style.display='block'; grid.innerHTML='<div style="color:rgba(255,255,255,0.35);font-size:.82rem;padding:.5rem 0">We are closed on Tuesdays. Please choose another day.</div>'; return; }
-  const brow   = isBrow(svc);
-  const slots  = brow ? (day===0 ? BROW_SUN_SLOTS : BROW_WKDAY_SLOTS) : (day===0 ? SUN_SLOTS : WKDAY_SLOTS);
-  const all    = (getBookings()[dateVal]||[]).concat(remoteTaken[dateVal]||[]);
-  const booked = slots.filter(t=> brow ? all.includes('BROW|'+t)
-                                      : (all.includes(selTech+'|'+t) || all.includes('*|'+t) || all.includes(t)));
+  if(isWax(svc) && day===1){ sec.style.display='block'; grid.innerHTML='<div style="color:rgba(245,240,231,0.6);font-size:.85rem;padding:.5rem 0">Waxing isn\'t available on Mondays. Please choose another day.</div>'; return; }
+  // Waxing takes about 15 minutes: no appointment time, the client comes in any time that day
+  if(isWax(svc)){
+    selTime = 'Any time';
+    sec.style.display='block';
+    grid.innerHTML='<div style="grid-column:1/-1;color:rgba(245,240,231,0.75);font-size:.9rem;line-height:1.7;padding:.25rem 0">Walk in any time, '+(day===0?'2pm – 7pm':'9am – 7pm')+'</div>';
+    return;
+  }
+  const wax    = false, brow = isBrow(svc);
+  const slots  = wax ? (day===0 ? WAX_SUN_SLOTS : WAX_WKDAY_SLOTS) : brow ? (day===0 ? BROW_SUN_SLOTS : BROW_WKDAY_SLOTS) : (day===0 ? SUN_SLOTS : WKDAY_SLOTS);
+  // Count bookings per time (the studio's records; this device's own list only when records are off)
+  const all    = SB_ON ? (remoteTaken[dateVal]||[]) : (getBookings()[dateVal]||[]);
+  const key    = calKey(svc, selTech), cap = capacity(svc, day);
+  const count  = t => all.filter(k => k===key+'|'+t || (!wax && !brow && (k==='*|'+t || k===t || /^(?!BROW|WAX)[^|]+\|/.test(k) && k.endsWith('|'+t)))).length;
+  const booked = slots.filter(t => count(t) >= cap);
   const now    = new Date();
   const isToday= dateVal===now.toISOString().split('T')[0];
   const nowMin = now.getHours()*60+now.getMinutes();
@@ -818,7 +841,6 @@ function pickSlot(el,time){
 document.addEventListener('DOMContentLoaded',()=>{
   const di=document.getElementById('bDate');
   di.min=new Date().toISOString().split('T')[0];
-  di.addEventListener('input',()=>{ const d=new Date(di.value+'T00:00:00'); if(d.getDay()===2) showToast('⚠ We are closed on Tuesdays — please choose another day'); });
   initSlider();
   renderTechs();
 });
@@ -845,7 +867,7 @@ function submitBooking(){
   if(!selTech){ showToast('⚠ Choose your lash tech'); return; }
   if(!date)   { showToast('⚠ Choose a date'); return; }
   const dd = new Date(date+'T00:00:00');
-  if(dd.getDay()===2){ showToast('⚠ We are closed on Tuesdays'); return; }
+  if(isWax(svcRaw) && dd.getDay()===1){ showToast('⚠ Waxing isn\'t available on Mondays'); return; }
   if(!selTime){ showToast('⚠ Select a time slot'); return; }
   if(!agreed) { showToast('⚠ Please agree to the studio policies'); return; }
 
@@ -1004,7 +1026,7 @@ document.querySelectorAll('.fi').forEach(el=>obs.observe(el));
   dots.addEventListener('click',e=>{ const i=[...dots.children].indexOf(e.target); if(i>=0){ showQ(i); autoQ(); } });
   autoQ();
   // Hours
-  const H=[['Sunday','2:00 – 7:00 PM'],['Monday','9:00 AM – 7:00 PM'],['Tuesday',null],['Wednesday','9:00 AM – 7:00 PM'],['Thursday','9:00 AM – 7:00 PM'],['Friday','9:00 AM – 7:00 PM'],['Saturday','9:00 AM – 7:00 PM']];
+  const H=[['Sunday','2:00 – 7:00 PM'],['Monday','9:00 AM – 7:00 PM'],['Tuesday','9:00 AM – 7:00 PM'],['Wednesday','9:00 AM – 7:00 PM'],['Thursday','9:00 AM – 7:00 PM'],['Friday','9:00 AM – 7:00 PM'],['Saturday','9:00 AM – 7:00 PM']];
   const t=new Date().getDay();
   document.getElementById('hoursList').innerHTML=[1,2,3,4,5,6,0].map(d=>`<div class="hr${d===t?' today':''}"><span>${H[d][0]}</span><span class="${H[d][1]?'':'cl'}">${H[d][1]||'Closed'}</span></div>`).join('');
   document.getElementById('yr').textContent=new Date().getFullYear();
@@ -1023,18 +1045,19 @@ document.querySelectorAll('.fi').forEach(el=>obs.observe(el));
   document.getElementById('catChoice').addEventListener('click',e=>{
     const c=e.target.closest('.cat'); if(!c) return;
     document.querySelectorAll('#catChoice .cat').forEach(x=>x.classList.toggle('sel',x===c));
-    const brow=c.dataset.cat==='brow';
-    const groups=[...sel.querySelectorAll('optgroup')].filter(g=>brow ? g.label==='Brows' : g.label!=='Brows');
-    pickSel.innerHTML='<option value="">Select a '+(brow?'brow':'lash')+' service</option>'+groups.map(g=>`<optgroup label="${g.label==='Add-Ons'?'Refills & extras':g.label}">`+
+    const cat=c.dataset.cat, brow=cat==='brow', wax=cat==='wax', NON_LASH=['Brows','Waxing'];
+    const groups=[...sel.querySelectorAll('optgroup')].filter(g=>brow ? g.label==='Brows' : wax ? g.label==='Waxing' : !NON_LASH.includes(g.label));
+    renderDays(wax);
+    pickSel.innerHTML='<option value="">Select a '+(brow?'brow':wax?'waxing':'lash')+' service</option>'+groups.map(g=>`<optgroup label="${g.label==='Add-Ons'?'Refills & extras':g.label}">`+
       [...g.querySelectorAll('option')].map(o=>{ const [n,pr]=o.value.split('|'); return `<option value="${o.value.replace(/"/g,'&quot;')}">${n} — ${+pr?'₵'+pr:'50% of set'}</option>`; }).join('')+'</optgroup>').join('');
-    document.getElementById('svcPickLbl').textContent = brow ? 'Choose your brow service' : 'Choose your lash service';
+    document.getElementById('svcPickLbl').textContent = brow ? 'Choose your brow service' : wax ? 'Choose your waxing service' : 'Choose your lash service';
     pick.hidden=false; sel.value=''; updateSlots(); showSel();
   });
   function showSel(){
     const v=sel.value, live=document.getElementById('selLive'), def=document.getElementById('selDefault');
     if(!v){ live.hidden=true; def.hidden=false; return; }
-    const [n,pr]=v.split('|'), brow=/Brow/.test(n);
-    document.getElementById('selKicker').textContent = brow ? 'Brows · your selection' : 'Lashes · your selection';
+    const [n,pr]=v.split('|'), wax=/\bWax\b/.test(n), brow=!wax && /Brow/.test(n);
+    document.getElementById('selKicker').textContent = wax ? 'Waxing · your selection' : brow ? 'Brows · your selection' : 'Lashes · your selection';
     document.getElementById('selName').textContent=n;
     document.getElementById('selMeta').textContent = +pr ? '₵'+pr+' · ₵'+Math.ceil(pr/2)+' deposit' : 'Priced at 50% of your set';
     def.hidden=true; live.hidden=false; live.style.animation='none'; live.offsetHeight; live.style.animation='';
@@ -1044,19 +1067,25 @@ document.querySelectorAll('.fi').forEach(el=>obs.observe(el));
   const daysEl=document.getElementById('days'), dIn=document.getElementById('bDate');
   const DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const pad=n=>String(n).padStart(2,'0'), ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-  let html=''; const now=new Date();
-  for(let i=0;i<21;i++){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); const closed=d.getDay()===2;
-    html+=`<button type="button" class="day" data-d="${ymd(d)}" ${closed?'disabled title="Closed on Tuesdays"':''}><small>${i===0?'Today':DN[d.getDay()]}</small><strong>${d.getDate()}</strong><small>${closed?'Closed':MN[d.getMonth()]}</small></button>`; }
-  daysEl.innerHTML=html;
+  // Open seven days. Waxing isn't offered on Mondays, so those days switch off when Waxing is chosen.
+  function renderDays(wax){
+    let html=''; const now=new Date();
+    for(let i=0;i<21;i++){ const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i); const off=wax && d.getDay()===1, v=ymd(d);
+      html+=`<button type="button" class="day${dIn.value===v&&!off?' sel':''}" data-d="${v}" ${off?'disabled title="No waxing on Mondays"':''}><small>${i===0?'Today':DN[d.getDay()]}</small><strong>${d.getDate()}</strong><small>${off?'No wax':MN[d.getMonth()]}</small></button>`; }
+    daysEl.innerHTML=html;
+    if(off_selected(wax)) dIn.value='';
+  }
+  const off_selected = wax => wax && dIn.value && new Date(dIn.value+'T00:00:00').getDay()===1;
+  renderDays(false);
   daysEl.addEventListener('click',e=>{ const b=e.target.closest('.day'); if(!b||b.disabled) return;
     daysEl.querySelectorAll('.day').forEach(x=>x.classList.toggle('sel',x===b)); dIn.value=b.dataset.d; updateSlots(); });
   window.goStep=function(n){
     if(n>=2 && !sel.value){ showToast('Choose a service first'); return; }
     if(n>=3){ if(!dIn.value){ showToast('Choose a day'); return; } if(typeof selTime==='undefined'||!selTime){ showToast('Choose a time'); return; } }
     if(n===2){
-      const brow=/^Brow/i.test(sel.value);
-      document.getElementById('timeLbl').textContent = brow ? 'Choose a time · brow appointments' : 'Choose a time · lash appointments';
-      document.getElementById('timeHint').textContent = brow ? 'Brow times: 11:00 AM, 1:00 PM, 3:00 PM, 5:00 PM. Booked and past times are unavailable.' : 'Booked and past times are unavailable.';
+      const wax=/\bWax\b/i.test(sel.value.split('|')[0]), brow=!wax && /^Brow/i.test(sel.value);
+      document.getElementById('timeLbl').textContent = wax ? 'Time' : brow ? 'Choose a time · brow appointments' : 'Choose a time · lash appointments';
+      document.getElementById('timeHint').textContent = wax ? '' : brow ? 'Brow times: 11:00 AM, 1:00 PM, 3:00 PM, 5:00 PM. Booked and past times are unavailable.' : 'Booked and past times are unavailable.';
       if(!dIn.value){ const first=daysEl.querySelector('.day:not([disabled])'); if(first) first.click(); } else updateSlots();
     }
     document.querySelectorAll('.step').forEach(s=>s.classList.toggle('on',+s.dataset.step===n));
